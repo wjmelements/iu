@@ -1,14 +1,17 @@
-Makefile
+wnet
 ========
 
-Basic Makefile for C/C++ projects.
+Basic message-passing framework
 
-- make: build the things
+- nodes are identified by a node id (nid\_t)
 
-- make again: rebuild the things
+- detects definite node failures and calls onNodeFailed(nid\_t), to be defined
+by the application
 
-- make clean: remove the things
+- works with any POSIX.1-2001 compliant system with glibc. Systems without
+glibc should only need to implement **poll** or replace the **poll** code with
+**select** code, but honestly your servers should be running Linux.
 
-- make check: run the tests
+- will support IPv6
 
-- make distcheck: run all the tests
+Development state: pre-alpha (as of November 2014)
