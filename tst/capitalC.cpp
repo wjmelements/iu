@@ -11,7 +11,7 @@
 
 static volatile size_t count = 0;
 void* func(void* _arg) {
-    pthread_mutex_t* arg = _arg;
+    pthread_mutex_t* arg = (pthread_mutex_t*)_arg;
     Pthread_mutex_lock(arg);
     count++;
     Pthread_mutex_unlock(arg);
@@ -60,7 +60,7 @@ int main() {
     Closedir(dp);
     Close(fd);
     const size_t buffer_size = 400000;
-    char* buffer = Malloc(buffer_size);
+    char* buffer = (char*) Malloc(buffer_size);
     int rfd = Open("/dev/urandom", O_RDONLY);
     Read(rfd, buffer, buffer_size);
     Close(rfd);

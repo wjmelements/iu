@@ -2,11 +2,11 @@ SHELL=/bin/bash
 CC=gcc
 CPP=g++
 CFLAGS=-O3 -fdiagnostics-color=auto -pthread -std=gnu11
-CXXFLAGS=$(filter-out -std=gnu11, $(CFLAGS)) -std=gnu++11 -fno-exceptions -Wno-write-strings
+CXXFLAGS=$(filter-out -std=gnu11, $(CFLAGS)) -std=gnu++11 -fno-exceptions -Wno-write-strings -Wno-pointer-arith
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin
 INCLUDE=$(addprefix -I,include)
 EXECS=$(addprefix bin/,)
-TESTS=$(addprefix tst/bin/,capitalC)
+TESTS=$(addprefix tst/bin/,capitalC msg net)
 
 .PHONY: default all clean again check distcheck dist-check
 .SECONDARY:
