@@ -3,6 +3,7 @@
 #endif
 
 #include "net.h"
+#include "node.h"
 
 #include <assert.h>
 #include <arpa/inet.h>
@@ -32,7 +33,7 @@ using std::vector;
 extern void believeDead(nid_t node);
 
 int Socket() {
-    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
         perror("socket");
         exit(errno);
@@ -54,15 +55,15 @@ static void prunePollFds() {
     });
 }
 static size_t start;
-port_t init_server(port_t* port) {
+static map<nid_t, addr_t> addresses;
+port_t init_server(port_t port) {
     start = 0;
     int fd = Socket();
-    struct sockaddr_in addr;
+    addr_t uaddr;
+    struct sockaddr_in& addr = uaddr.siaddr4;;
     bzero(&addr, sizeof(addr));
-    addr.sin_family = AF_INET6;
-    if (port) {
-        addr.sin_port = *port;
-    }
+    addr.sin_family = AF_INET;
+    addr.sin_port = port;
     int binded = bind(fd, (struct sockaddr*) &addr, sizeof(addr));
     if (binded == -1) {
         perror("bind");
@@ -81,12 +82,12 @@ port_t init_server(port_t* port) {
         exit(errno);
     }
     addPollFd(fd);
-    return *port = addr.sin_port;
+    addresses[me()] = uaddr;
+    return addr.sin_port;
 }
 
 static map<int, nid_t> connections;
 static map<nid_t, int> outbound_connections;
-static map<port_t, nid_t> nids;
 
 struct pollfd* getPollfds() {
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
@@ -160,11 +161,12 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
     int fd;
     if (iterator == outbound_connections.end()) {
         fd = Socket();
-        struct sockaddr_in6 addr;
-        bzero(&addr, sizeof(addr));
-        addr.sin6_family = AF_INET6;
-        addr.sin6_port = htons(port);
-        &addr.sin6_addr.s6_addr = htonl(addr);
+        auto address = addresses.find(nid);
+        if (address == addresses.end()) {
+            fprintf(stderr, "No known address for node %u\n", nid);
+            return false;
+        }
+        addr_t addr = address->second;
         int connected = connect(fd, (struct sockaddr*) &addr, sizeof(addr));
         if (connected == -1) {
             Close(fd);
@@ -175,7 +177,7 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
             perror("connect");
             exit(errno);
         }
-        outbound_connections.insert(pair<port_t, int>(port, fd));
+        outbound_connections.insert(pair<nid_t, int>(nid, fd));
     } else {
         fd = iterator->second;
     }
@@ -189,7 +191,6 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
             //printf("POLLHUP\n");
             Close(fd);
             outbound_connections.erase(iterator);
-            nid_t nid = getPortNode(port);
             //printf("3 %u\n", nid);
             believeDead(nid);
             return false;
@@ -201,7 +202,6 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
         if (errno == ECONNRESET) {
             Close(fd);
             outbound_connections.erase(iterator);
-            nid_t nid = getPortNode(port);
             //printf("3 %u\n", nid);
             believeDead(nid);
             return false;

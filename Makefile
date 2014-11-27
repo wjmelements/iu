@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 CC=gcc
 CPP=g++
-CFLAGS=-O3 -fdiagnostics-color=auto -pthread -std=gnu11
+CFLAGS=-O3 -fdiagnostics-color=auto -pthread -std=gnu11 -g
 CXXFLAGS=$(filter-out -std=gnu11, $(CFLAGS)) -std=gnu++11 -fno-exceptions -Wno-write-strings -Wno-pointer-arith
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin
 INCLUDE=$(addprefix -I,include)

@@ -5,7 +5,7 @@
 #include "msg.h"
 #include "types.h"
 
-port_t init_server(port_t* port);
+port_t init_server(port_t port = 0);
 bool send_msg(const struct msg* msg, nid_t nid);
 // blocking
 struct msg* next_msg();
