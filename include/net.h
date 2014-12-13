@@ -6,6 +6,7 @@
 #include "types.h"
 
 port_t init_server(port_t port = 0);
+void setNodeAddr(nid_t nid, addr_t* addr); 
 bool send_msg(const struct msg* msg, nid_t nid);
 
 // non-NULL pointers from next_* need to be passed to free()

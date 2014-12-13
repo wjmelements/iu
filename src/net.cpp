@@ -82,8 +82,12 @@ port_t init_server(port_t port) {
         exit(errno);
     }
     addPollFd(fd);
-    addresses[me()] = uaddr;
+    setNodeAddr(me(), &uaddr);
     return addr.sin_port;
+}
+
+inline void setNodeAddr(nid_t nid, addr_t* addr) {
+    addresses[nid] = *addr;
 }
 
 static map<int, nid_t> nids;
@@ -186,6 +190,7 @@ int connect_to(nid_t nid) {
     nids.insert(pair<int, nid_t>(fd, nid));
     identity_msg idm;
     send_msg(&idm, nid);
+    addPollFd(fd);
     return fd;
 }
 
