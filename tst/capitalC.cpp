@@ -16,6 +16,32 @@ void* func(void* _arg) {
     count++;
     Pthread_mutex_unlock(arg);
 }
+#define test_negative(FUNC, ERRNO)\
+    {\
+        pid_t pid = Fork();\
+        if (!pid) {\
+            Close(2);\
+            assert(2 == Open("/dev/null", O_WRONLY));\
+            FUNC;\
+            exit(EXIT_SUCCESS);\
+        }\
+        int status;\
+        assert(pid == Wait(&status));\
+        assert(WIFEXITED(status));\
+        if (WEXITSTATUS(status) != ERRNO) {\
+            printf("Wrong errno for "#FUNC": %i (%s)\n", WEXITSTATUS(status), strerror(WEXITSTATUS(status)));\
+        }\
+        assert(WEXITSTATUS(status) == ERRNO);\
+    }
+
+void test_negatives() {
+    pthread_t anything;
+    int bleh;
+    test_negative(Close(-1), EBADF);
+    test_negative(Wait(&bleh), ECHILD);
+    test_negative(Lseek(-1,0,0), EBADF);
+}
+
 void test_pthreads() {
     pthread_t thread;
     pthread_mutex_t mutex;
@@ -27,29 +53,20 @@ void test_pthreads() {
     }
     while (count != expected) {
         sched_yield();
-        /*
-        Pthread_mutex_lock(&mutex);
-        Pthread_mutex_unlock(&mutex);
-        */
     }
     Pthread_mutex_destroy(&mutex);
 }
 
 int main() {
     pid_t pid = Fork();
-    if (pid) {
-        // parent
-    } else {
-        // child
-        return -1;
-    }
-    if (pid = Fork()) {
-        // parent
-        Kill(pid, SIGKILL);
-    } else {
-        // child
+    if (!pid) {
         while (1);
     }
+    Kill(pid, SIGKILL);
+    int status;
+    assert(pid == Wait(&status));
+    assert(WIFSIGNALED(status));
+    assert(WTERMSIG(status) == SIGKILL);
     char buf[16];
     char origin[16] = "abcdefg";
     Snprintf(buf, 16, origin);
@@ -68,6 +85,7 @@ int main() {
     Write(dnfd, buffer, buffer_size);
     Close(dnfd);
     Free(buffer);
-    test_pthreads();
+    //test_pthreads();
+    test_negatives();
     return 0;
 }
