@@ -12,6 +12,6 @@ by the application
 glibc should only need to implement **poll** or replace the **poll** code with
 **select** code, but honestly your servers should be running Linux.
 
-- will support IPv6
+- supports IPv6
 
-Development state: pre-alpha (as of November 2014)
+Development state: alpha (as of December 2014)
