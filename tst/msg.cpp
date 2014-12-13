@@ -6,6 +6,12 @@
 nid_t me() {
     return 42;
 }
+bool isServer() {
+    return false;
+}
+datacenter getLocation() {
+    return US_WEST;
+}
 
 int main() {
     heartbeat_msg msg;

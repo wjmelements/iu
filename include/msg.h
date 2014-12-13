@@ -1,3 +1,4 @@
+#include "datacenters.h"
 #include "types.h"
 enum msg_type {
     IDENTITY,
@@ -17,6 +18,9 @@ protected:
 
 struct identity_msg : msg {
     nid_t sender;
+    datacenter loc;
+    bool senderIsServer;
+
     identity_msg();
 };
 

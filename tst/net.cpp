@@ -18,6 +18,12 @@ using std::set;
 nid_t me() {
     return ME;
 }
+bool isServer() {
+    return false;
+}
+datacenter getLocation() {
+    return US_WEST;
+}
 
 set<nid_t> dead;
 void believeDead(nid_t nid) {

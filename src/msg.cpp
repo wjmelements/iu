@@ -12,6 +12,8 @@ msg::msg(size_t _length, msg_type _type):
 
 identity_msg::identity_msg():
     msg(sizeof(*this), IDENTITY),
+    loc(getLocation()),
+    senderIsServer(isServer()),
     sender(me())
 {
 }

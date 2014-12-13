@@ -1,4 +1,7 @@
 #include "client.h"
+bool isServer() {
+    return false;
+}
 void believeDead(nid_t nid) {
     // TODO
 }

@@ -1,3 +1,5 @@
 #include "net.h"
 nid_t me();
-void init_node(nid_t nid);
+bool isServer();
+datacenter getLocation();
+void init_node(nid_t nid, datacenter loc);
