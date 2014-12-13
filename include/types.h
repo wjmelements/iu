@@ -3,6 +3,10 @@
 
 #include <netinet/in.h>
 #include <stdint.h>
+
+#include <string>
+using std::string;
+
 typedef uint16_t port_t;
 union addr_t {
     struct sockaddr saddr;

@@ -2,7 +2,9 @@
 enum msg_type {
     IDENTITY,
     HEARTBEAT,
-    GOSSIP
+    ADDRESS,
+    // submessages
+    STRING
 };
 struct msg {
     size_t length;
@@ -21,3 +23,23 @@ struct identity_msg : msg {
 struct heartbeat_msg : msg {
     heartbeat_msg();
 };
+
+// variable length
+struct string_msg : msg {
+    // not NULL-terminated
+    char text;
+
+    friend struct string_msg* new_string_msg(const string& str);
+private:
+    string_msg(size_t len);
+};
+struct string_msg* new_string_msg(const string& str);
+
+struct addr_msg : msg {
+    nid_t nid;
+    addr_t addr;
+    bool isServer;
+
+    addr_msg(nid_t nid, addr_t* addr);
+};
+
