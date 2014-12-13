@@ -1,4 +1,3 @@
-#include "msg.h"
 #include "node.h"
 
 msg::msg(size_t _length, msg_type _type):
