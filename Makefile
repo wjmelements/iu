@@ -30,8 +30,8 @@ FNM=\([a-z_A-Z]*\)
 .make/tst/bin/%.d: .make/tst/%.d | .make/tst/bin
 	@sed 's/include\/$(FNM).h/lib\/\1.o/g' $< > $@
 	@sed -i 's/$(FNM).o:/tst\/bin\/\1:/g' $@
-	perl make/depend.pl $@ > $@.bak
-	mv $@.bak $@
+	@perl make/depend.pl $@ > $@.bak
+	@mv $@.bak $@
 MAKES=$(addsuffix .d,$(addprefix .make/, $(EXECS) $(TESTS)))
 -include $(MAKES)
 distcheck dist-check:
