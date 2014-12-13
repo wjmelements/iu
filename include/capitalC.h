@@ -20,6 +20,7 @@ void* Calloc(size_t nmemb, size_t size);
 void Close(int fd);
 void Closedir(DIR* dp);
 void Connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen);
+int Dup(int fd);
 void Fclose(FILE* fp);
 DIR* Fdopendir(int fd);
 FILE* Fopen(const char* path, const char* mode);
@@ -65,6 +66,13 @@ static inline void Close(int fd) {
     if (ret == -1) {
         DIE();
     }
+}
+static inline int Dup(int fd) {
+    int ret = dup(fd);
+    if (ret == -1) {
+        DIE();
+    }
+    return ret;
 }
 static inline void Lseek(int fd, off_t offset, int whence) {
     off_t ret = lseek(fd, offset, whence);
