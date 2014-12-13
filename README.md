@@ -5,7 +5,7 @@ Basic message-passing framework
 
 - nodes are identified by a node id (nid\_t)
 
-- detects definite node failures and calls onNodeFailed(nid\_t), to be defined
+- detects definite node failures and calls **believeDead(nid\_t)**, to be defined
 by the application
 
 - works with any POSIX.1-2001 compliant system with glibc. Systems without
