@@ -39,12 +39,20 @@ static void basic_server_test() {
     struct msg* rmsg = next_msg();
     assert(rmsg != NULL);
     assert(memcmp(rmsg, &hmsg, sizeof(hmsg)) == 0);
+    assert(msg_source() == me());
     free(rmsg);
 
     assert(next_msg_now() == NULL);
 
     assert(send_msg(&hmsg, me()));
     rmsg = next_msg();
+    assert(rmsg != NULL);
+    assert(memcmp(rmsg, &hmsg, sizeof(hmsg)) == 0);
+    assert(msg_source() == me());
+    free(rmsg);
+
+    assert(send_msg(&hmsg, me()));
+    rmsg = next_msg_same();
     assert(rmsg != NULL);
     assert(memcmp(rmsg, &hmsg, sizeof(hmsg)) == 0);
     free(rmsg);
@@ -57,7 +65,16 @@ static void basic_server_test() {
 
 void dead_server_test() {
     init_server();
-    // TODO
+    /*
+    pid_t pid = Fork();
+    if (!pid) {
+        shutdown_server();
+        init_server();
+        Kill(SIGKILL
+    } else {
+        
+    }
+    */
     shutdown_server();
 }
 

@@ -5,6 +5,7 @@
 #include <stdint.h>
 typedef uint16_t port_t;
 union addr_t {
+    struct sockaddr saddr;
     sockaddr_in6 siaddr6;
     sockaddr_in siaddr4;
     struct {

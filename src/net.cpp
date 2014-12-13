@@ -54,7 +54,7 @@ static void prunePollFds() {
         return pollfd.fd < 0;
     });
 }
-static size_t start;
+static size_t start; // for round-robin
 static map<nid_t, addr_t> addresses;
 port_t init_server(port_t port) {
     start = 0;
@@ -86,8 +86,8 @@ port_t init_server(port_t port) {
     return addr.sin_port;
 }
 
-static map<int, nid_t> connections;
-static map<nid_t, int> outbound_connections;
+static map<int, nid_t> nids;
+static map<nid_t, int> connections;
 
 struct pollfd* getPollfds() {
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
@@ -98,23 +98,19 @@ struct pollfd* getPollfds() {
 
 void shutdown_server() {
 	//printf("Shutting down server!\n");
-    for (auto it : connections) {
+    for (auto it : nids) {
         Close(it.first);
     }
+    nids.clear();
     connections.clear();
-    outbound_connections.clear();
     pollfds_vector.clear();
     Close(server_fd);
 }
 
-static int accept_connection() {
-    int fd = Accept(server_fd, NULL, NULL);
-    // initially do not know who connection is with
-    connections.insert(std::pair<int, nid_t>(fd, -1));
-    addPollFd(fd);
-    return fd;
+static int last_fd;
+nid_t msg_source() {
+    return nids[last_fd];
 }
-
 static struct msg* recv_msg(int fd) {
     struct msg rcvd;
     ssize_t bytes = recv(fd, &rcvd, sizeof(rcvd), MSG_PEEK);
@@ -130,13 +126,12 @@ static struct msg* recv_msg(int fd) {
     }
     // should have been caught by RDHUP
     if (bytes == 0) {
-        nid_t node = connections[fd];
-        connections.erase(fd);
+        nid_t node = nids[fd];
+        nids.erase(fd);
         //printf("1 %u\n", node);
         believeDead(node);
         return NULL;
     }
-    assert(bytes == sizeof(rcvd));
     //printf("message type %u received by %u, size %u\n", rcvd.type, me(), rcvd.length);
     struct msg* ret = (struct msg*) malloc(rcvd.length);
     bytes = recv(fd, ret, rcvd.length, 0);
@@ -151,33 +146,57 @@ static struct msg* recv_msg(int fd) {
             exit(errno);
         }
     }
-    assert(bytes != 0);
-    assert(bytes == rcvd.length);
     return ret;
 }
 
+static int accept_connection() {
+    int fd = Accept(server_fd, NULL, NULL);
+    struct msg* msg = recv_msg(fd);
+    struct identity_msg* id_msg = (struct identity_msg*) msg;
+    nid_t nid = id_msg->sender;
+    nids.insert(std::pair<int, nid_t>(fd, nid));
+    connections.insert(std::pair<nid_t, int>(nid, fd));
+    addPollFd(fd);
+    return fd;
+}
+
+struct msg* next_msg_same() {
+    return recv_msg(last_fd);
+}
+
+int connect_to(nid_t nid) {
+    int fd = Socket();
+    auto address = addresses.find(nid);
+    if (address == addresses.end()) {
+        fprintf(stderr, "No known address for node %u\n", nid);
+        return -1;
+    }
+    addr_t addr = address->second;
+    int connected = connect(fd, &addr.saddr, sizeof(addr));
+    if (connected == -1) {
+        Close(fd);
+        if (errno == ECONNREFUSED) {
+            believeDead(nid);
+            return -1;
+        }
+        perror("connect");
+        exit(errno);
+    }
+    connections.insert(pair<nid_t, int>(nid, fd));
+    nids.insert(pair<int, nid_t>(fd, nid));
+    identity_msg idm;
+    send_msg(&idm, nid);
+    return fd;
+}
+
 bool send_msg(const struct msg* to_send, nid_t nid) {
-    auto iterator = outbound_connections.find(nid);
+    auto iterator = connections.find(nid);
     int fd;
-    if (iterator == outbound_connections.end()) {
-        fd = Socket();
-        auto address = addresses.find(nid);
-        if (address == addresses.end()) {
-            fprintf(stderr, "No known address for node %u\n", nid);
+    if (iterator == connections.end()) {
+        fd = connect_to(nid);
+        if (fd == -1) {
             return false;
         }
-        addr_t addr = address->second;
-        int connected = connect(fd, (struct sockaddr*) &addr, sizeof(addr));
-        if (connected == -1) {
-            Close(fd);
-            if (errno == ECONNREFUSED) {
-                believeDead(nid);
-                return false;
-            }
-            perror("connect");
-            exit(errno);
-        }
-        outbound_connections.insert(pair<nid_t, int>(nid, fd));
     } else {
         fd = iterator->second;
     }
@@ -190,7 +209,8 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
         if (pollfd.revents & POLLHUP) {
             //printf("POLLHUP\n");
             Close(fd);
-            outbound_connections.erase(iterator);
+            nids.erase(fd);
+            connections.erase(iterator);
             //printf("3 %u\n", nid);
             believeDead(nid);
             return false;
@@ -201,7 +221,8 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
     if (sent == -1) {
         if (errno == ECONNRESET) {
             Close(fd);
-            outbound_connections.erase(iterator);
+            nids.erase(fd);
+            connections.erase(iterator);
             //printf("3 %u\n", nid);
             believeDead(nid);
             return false;
@@ -209,15 +230,11 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
         perror("send");
         exit(errno);
     }
-    assert(sent == to_send->length);
     return true;
 }
 
 struct msg* next_msg_now() {
     struct pollfd* poll_fds = getPollfds();
-    for (size_t offset = 0; offset < pollfds_vector.size(); offset++) {
-        assert(!poll_fds[offset].revents);
-    }
     const int timeout = 0;
     int polld = poll(poll_fds, pollfds_vector.size(), timeout);
     if (polld == -1) {
@@ -231,7 +248,6 @@ struct msg* next_msg_now() {
     for (size_t offset = 0; offset < pollfds_vector.size(); offset++) {
         size_t i = offset + start + 1;
         i = i >= pollfds_vector.size() ? i - pollfds_vector.size() : i;
-        assert(i < pollfds_vector.size());
         if (poll_fds[i].revents & POLLIN) {
             start = i;
             break;
@@ -243,7 +259,7 @@ struct msg* next_msg_now() {
     } else {
         fd = poll_fds[start].fd;
         if (poll_fds[start].revents & POLLRDHUP) {
-            nid_t peer = connections[fd];
+            nid_t peer = nids[fd];
             // peer has closed their write end
             if (peer != -1) {
                 believeDead(peer);
@@ -251,7 +267,7 @@ struct msg* next_msg_now() {
 
             int fd = poll_fds[start].fd;
             Close(fd);
-            connections.erase(fd);
+            nids.erase(fd);
             // do not care about events on this fd anymore
             poll_fds[start].fd = -fd;
             return next_msg_now();
@@ -262,6 +278,7 @@ struct msg* next_msg_now() {
     if (ret == NULL) {
         return next_msg_now();
     }
+    last_fd = fd;
     return ret;
 }
 
@@ -272,6 +289,7 @@ struct msg* next_msg() {
         if (ret) {
             return ret;
         } else {
+            prunePollFds();
             sched_yield();
         }
     }
