@@ -5,6 +5,8 @@ enum msg_type {
     HEARTBEAT,
     ADDRESS,
     // submessages
+    FILE_HEADER,
+    FILE_CHUNK,
     STRING
 };
 struct msg {
@@ -23,6 +25,24 @@ struct identity_msg : msg {
 
     identity_msg();
 };
+
+struct file_header : msg {
+    size_t num_chunks;
+
+    file_header(size_t num_chunks);
+};
+
+struct file_chunk : msg {
+    char bytes;
+
+    inline size_t getChunkSize() {
+        return length - sizeof(file_chunk) + sizeof(file_chunk::bytes);
+    }
+    friend struct file_chunk* new_file_chunk(size_t buff_size, int fd);
+private:
+    file_chunk(size_t len);
+};
+struct file_chunk* new_file_chunk(size_t buff_size, int fd);
 
 struct heartbeat_msg : msg {
     heartbeat_msg();
