@@ -6,7 +6,7 @@ void send_file(int fd, nid_t dest) {
     struct stat info;
     Fstat(fd, &info);
     const size_t file_size = info.st_size;
-    size_t num_chunks = file_size / CHUNK_SIZE;
+    size_t num_chunks = file_size / CHUNK_SIZE + 1;
     file_header header(num_chunks);
     send_msg(&header, dest);
     for (size_t i = 0; i + 1 < num_chunks; i++) {
