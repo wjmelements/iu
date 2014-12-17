@@ -56,6 +56,31 @@ void test_pthreads() {
     }
     Pthread_mutex_destroy(&mutex);
 }
+void test_rdwr() {
+    const size_t buffer_size = 4000;
+    char* buffer = (char*) Malloc(buffer_size);
+
+    int rfd = Open("/dev/urandom", O_RDONLY);
+    Read(rfd, buffer, buffer_size);
+    Close(rfd);
+
+    int dnfd = Open("/dev/null", O_WRONLY);
+    Write(dnfd, buffer, buffer_size);
+    Close(dnfd);
+
+    int rdwr[2];
+    Pipe(rdwr);
+    Write(rdwr[1], buffer, buffer_size);
+    char* buffer2 = (char*) Malloc(buffer_size);
+    Read(rdwr[0], buffer2, buffer_size);
+    assert(memcmp(buffer, buffer2, buffer_size) == 0);
+    Close(rdwr[0]);
+    Close(rdwr[1]);
+
+    Free(buffer);
+    free(buffer2);
+}
+
 
 int main() {
     pid_t pid = Fork();
@@ -71,21 +96,15 @@ int main() {
     char origin[16] = "abcdefg";
     Snprintf(buf, 16, origin);
     assert(strncmp(buf, origin, 16) == 0);
+
     int fd = Open("include/capitalC.h", O_NOATIME);
     int dfd = Open("include", O_DIRECTORY | O_NOATIME);
     DIR* dp = Fdopendir(dfd);
     Closedir(dp);
     Close(fd);
-    const size_t buffer_size = 400000;
-    char* buffer = (char*) Malloc(buffer_size);
-    int rfd = Open("/dev/urandom", O_RDONLY);
-    Read(rfd, buffer, buffer_size);
-    Close(rfd);
-    int dnfd = Open("/dev/null", O_WRONLY);
-    Write(dnfd, buffer, buffer_size);
-    Close(dnfd);
-    Free(buffer);
-    //test_pthreads();
+
+    test_rdwr();
+    test_pthreads();
     test_negatives();
     return 0;
 }
