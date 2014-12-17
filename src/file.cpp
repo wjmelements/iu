@@ -6,15 +6,22 @@ void send_file(int fd, nid_t dest) {
     struct stat info;
     Fstat(fd, &info);
     const size_t file_size = info.st_size;
-    size_t num_chunks = file_size / CHUNK_SIZE + 1;
+    const size_t remainder = file_size % CHUNK_SIZE;
+    size_t num_chunks = file_size / CHUNK_SIZE + (
+        remainder
+        ? 1
+        : 0
+    );
     file_header header(num_chunks);
     send_msg(&header, dest);
-    for (size_t i = 0; i + 1 < num_chunks; i++) {
+    for (size_t i = 0; i < file_size / CHUNK_SIZE; i++) {
         file_chunk* chunk = new_file_chunk(CHUNK_SIZE, fd);
         send_msg(chunk, dest);
         free(chunk);
     }
-    const size_t remainder = file_size % CHUNK_SIZE;
+    if (!remainder) {
+        return;
+    }
     file_chunk* last = new_file_chunk(remainder, fd);
     send_msg(last, dest);
     free(last);

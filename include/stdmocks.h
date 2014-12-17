@@ -1,5 +1,5 @@
 void believeDead(nid_t nid) {
-    assert(0);
+    assert(0 && "believeDead");
 }
 nid_t me() {
     return 42;
