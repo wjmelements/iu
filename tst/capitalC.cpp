@@ -57,7 +57,7 @@ void test_pthreads() {
     Pthread_mutex_destroy(&mutex);
 }
 void test_rdwr() {
-    const size_t buffer_size = 4000;
+    const size_t buffer_size = 40000;
     char* buffer = (char*) Malloc(buffer_size);
 
     int rfd = Open("/dev/urandom", O_RDONLY);
@@ -78,7 +78,7 @@ void test_rdwr() {
     Close(rdwr[1]);
 
     Free(buffer);
-    free(buffer2);
+    Free(buffer2);
 }
 
 
