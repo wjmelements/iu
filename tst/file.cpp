@@ -5,7 +5,7 @@
 #include <string.h>
 
 // use "normal" test mocks
-#include "stdmocks.h"
+#include "mocks/stdmocks.h"
 void test_size(size_t size);
 
 int main() {

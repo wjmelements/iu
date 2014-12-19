@@ -86,8 +86,12 @@ port_t init_server(port_t port) {
     return addr.sin_port;
 }
 
-inline void setNodeAddr(nid_t nid, addr_t* addr) {
+void setNodeAddr(nid_t nid, const addr_t* addr) {
     addresses[nid] = *addr;
+}
+// used primarily for unit testing
+const addr_t& getNodeAddr(nid_t nid) {
+    return addresses[nid];
 }
 
 static map<int, nid_t> nids;

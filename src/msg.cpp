@@ -54,3 +54,11 @@ struct string_msg* new_string_msg(const string& str) {
     memcpy(&ret->text, str.c_str(), str.size());
     return ret;
 }
+
+addr_msg::addr_msg(nid_t _nid, addr_t* _addr):
+    msg(sizeof(*this), ADDRESS),
+    nid(_nid),
+    addr(*_addr)
+{
+
+}

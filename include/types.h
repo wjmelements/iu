@@ -27,6 +27,8 @@ union addr_t {
         };
     };
 };
+bool operator ==(const addr_t&, const addr_t&);
+bool operator !=(const addr_t&, const addr_t&);
 typedef uint64_t nid_t;
 typedef uint64_t size_t;
 
