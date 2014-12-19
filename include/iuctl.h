@@ -1,3 +1,4 @@
+#include "capitalC.h"
 #include <sys/types.h>
 
 enum ctl_t {

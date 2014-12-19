@@ -50,5 +50,7 @@ void test_size(size_t size) {
     Close(recvd);
 
     assert(memcmp(buffer, buffr2, size) == 0);
+    Free(buffer);
+    Free(buffr2);
 
 }

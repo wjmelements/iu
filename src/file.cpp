@@ -36,6 +36,7 @@ int recv_file(void) {
     for (size_t i = 0; i < num_chunks; i++) {
         struct file_chunk* fchunk = (struct file_chunk*) next_msg_same();
         Write(fd, &fchunk->bytes, fchunk->getChunkSize());
+        free(fchunk);
     }
     Lseek(fd, 0, SEEK_SET);
     return fd;

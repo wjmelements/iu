@@ -25,11 +25,13 @@ int main() {
         assert(get_conversation(NID).size() == 1);
 
         shutdown_server();
+        messenger_destroy();
         return 0;
     }
     struct msg* tmsg = next_msg();
     assert(tmsg->type == ITEM);
     handle_item_msg((item_msg*) tmsg);
+    free(tmsg);
     assert(get_conversation(NID2).size() == 1);
 
     int status;
@@ -42,6 +44,8 @@ int main() {
     assert(next_msg_now() == NULL);
     shutdown_server();
     assert(expectedDead == 0);
+
+    messenger_destroy();
 
     return 0;
 }

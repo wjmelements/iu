@@ -1,6 +1,7 @@
 #include "messenger.h"
 
 #include <string.h>
+#include <unistd.h>
 
 // each message has a sequence number unique in a sender/receiver relation
 static map<nid_t, seq_t> sequence_numbers; 
@@ -80,9 +81,30 @@ void handle_item_msg(const item_msg* imsg) {
         msg* smsg = next_msg_same();
         const string_msg* str = (const string_msg*) smsg;
         size_t size = str->text_size();
-        item.text = (char*) malloc(size);
+        item.text = (char*) malloc(size + 1);
         memcpy(item.text, &str->text, size);
         item.text[size] = '\0';
+        free(smsg);
     }
     add_received(imsg, item);
+}
+void messenger_destroy() {
+    for (auto it = messages.begin(); it != messages.end(); it++) {
+        auto items = it->second;
+        for (auto item = items.begin(); item != items.end(); item++) {
+            if (item->type == ITEM_TEXT) {
+                free(item->text);
+            } else {
+                if (item->saved) {
+                    // do not care if this fails
+                    unlink(item->path);
+                }
+                free(item->path);
+            }
+        }
+    }
+    messages.clear();
+    sent.clear();
+    received.clear();
+    sequence_numbers.clear();
 }

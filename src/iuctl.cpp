@@ -15,13 +15,13 @@
 #define UMASK 0644
 /* Cannot be 0 */
 #define QUEUE_ID 42
-#define QUEUE_PATH "/tmp/q"
+#define QUEUE_PATH "./.iuctl_q"
 
 static int msg_q;
 static void init_iuctl(bool creat) {
     if(creat) {
-        int fd = open(QUEUE_PATH, O_CREAT | O_RDWR);
-        close(fd);
+        int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR);
+        Close(fd);
     }
     /* Cannot use directory */
     key_t key = ftok(QUEUE_PATH, QUEUE_ID);

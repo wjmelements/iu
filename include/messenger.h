@@ -10,3 +10,6 @@ void handle_item_msg(const item_msg*);
 
 // view conversation
 const list<item_t>& get_conversation(nid_t with);
+
+// cleanup
+void messenger_destroy();
