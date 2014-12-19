@@ -8,6 +8,12 @@
 
 extern const addr_t& getNodeAddr(nid_t nid);
 
+size_t expectingDeaths = 0;
+void believeDead(nid_t nid) {
+    assert(expectingDeaths-- && "believeDead");
+}
+
+
 int main() {
     addr_t fake;
     fake.family = 1;
@@ -32,12 +38,21 @@ int main() {
     struct msg* msg = next_msg();
     assert(msg->type == ADDRESS);
     assert(getNodeAddr(NID2) != fake);
+    assert(msg_source() == NID2);
     handle_msg(msg);
+    free(msg);
     assert(getNodeAddr(NID2) == fake);
+
     int status;
     pid_t finished = Wait(&status);
     assert(pid == finished);
     assert(WIFEXITED(status));
     assert(WEXITSTATUS(status) == 0);
+
+    expectingDeaths++;
+    assert(next_msg_now() == NULL);
+    shutdown_server();
+    assert(expectingDeaths == 0);
+
     return 0;
 }

@@ -9,6 +9,15 @@ msg::msg(size_t _length, msg_type _type):
     
 }
 
+item_msg::item_msg(item_type _itype, nid_t _receiver, seq_t _index):
+    msg(sizeof(*this), ITEM),
+    sender(me()),
+    receiver(_receiver),
+    index(_index),
+    itype(_itype)
+{
+
+}
 
 identity_msg::identity_msg():
     msg(sizeof(*this), IDENTITY),

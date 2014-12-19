@@ -4,6 +4,10 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
+#include <list>
+using std::list;
+#include <map>
+using std::map;
 #include <string>
 using std::string;
 
@@ -29,7 +33,39 @@ union addr_t {
 };
 bool operator ==(const addr_t&, const addr_t&);
 bool operator !=(const addr_t&, const addr_t&);
+
 typedef uint64_t nid_t;
 typedef uint64_t size_t;
+typedef uint64_t seq_t;
+
+enum item_type {
+    ITEM_TEXT,
+    ITEM_FILE
+};
+struct item_t {
+    item_type type;
+    bool received; // was it sent or received ?
+    union {
+        // if received
+        seq_t index;
+        // if not received then this area is undefined
+    };
+    union {
+        // FILE
+        struct {
+            bool saved;
+            union {
+                // OPEN
+                int fd;
+                // SAVED
+                char* path; // null-terminated
+            };
+        };
+        // TEXT
+        struct {
+            char* text; // null-terminated
+        };
+    };
+};
 
 #endif

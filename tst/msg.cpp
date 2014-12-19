@@ -23,6 +23,7 @@ int main() {
     assert(str->type == STRING);
     assert(str->length > hello.size());
     assert(0 == memcmp(&str->text, hello.c_str(), hello.size()));
+    assert(hello.size() == str->text_size());
     free(str);
 
     return 0;

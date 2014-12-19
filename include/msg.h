@@ -4,6 +4,8 @@ enum msg_type {
     IDENTITY,
     HEARTBEAT,
     ADDRESS,
+    // client to client (maybe through server)
+    ITEM,
     // submessages
     FILE_HEADER,
     FILE_CHUNK,
@@ -16,6 +18,15 @@ struct msg {
     msg(){};
 protected:
     msg(size_t length, msg_type type);
+};
+
+struct item_msg : msg {
+    nid_t sender;
+    nid_t receiver;
+    seq_t index;
+    item_type itype;
+
+    item_msg(item_type, nid_t receiver, seq_t index);
 };
 
 struct identity_msg : msg {
@@ -53,6 +64,9 @@ struct string_msg : msg {
     // not NULL-terminated
     char text;
 
+    inline size_t text_size() const {
+        return this->length - sizeof(string_msg) + sizeof(string_msg::text);
+    };
     friend struct string_msg* new_string_msg(const string& str);
 private:
     string_msg(size_t len);

@@ -20,5 +20,7 @@ void handle_msg(const msg* m) {
         case ADDRESS:
             handle_address_msg((const addr_msg*) m);
             break;
+        default:
+            fprintf(stderr, "Unknown message type %u\n", m->type);
     }
 }

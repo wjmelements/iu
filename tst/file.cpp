@@ -8,6 +8,10 @@
 #include "mocks/stdmocks.h"
 void test_size(size_t size);
 
+void believeDead(nid_t nid) {
+    assert(0 && "believeDead");
+}
+
 int main() {
     init_server();
     assert(next_msg_now() == NULL);
