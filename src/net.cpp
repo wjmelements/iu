@@ -162,6 +162,7 @@ static int accept_connection() {
     struct msg* msg = recv_msg(fd);
     struct identity_msg* id_msg = (struct identity_msg*) msg;
     nid_t nid = id_msg->sender;
+    free(id_msg);
     nids.insert(std::pair<int, nid_t>(fd, nid));
     connections.insert(std::pair<nid_t, int>(nid, fd));
     addPollFd(fd);
