@@ -274,14 +274,23 @@ template<typename T> bool stream<T>::empty(size_t id) {
     return false;
 }
 template<typename T> bool stream<T>::ready(size_t id) {
-    node<T> const *const node = *listeners[id];
+    node<T> *const node = *listeners[id];
     if (node == NULL) {
         return false;
     }
     if (!node->other) {
         return true;
     }
-    return node->other->proxy->ready(node->id);
+    bool closed = node->other->proxy->closed();
+    bool ready = node->other->proxy->ready(node->id);
+    if (ready) {
+        return true;
+    }
+    if (!closed) {
+        return false;
+    }
+    listeners[id] = &node->next;
+    return this->ready(id);
 }
 template<typename T> bool stream<T>::canceled(size_t id) {
     return listeners[id] == NULL;

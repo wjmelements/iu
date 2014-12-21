@@ -35,6 +35,7 @@ int main() {
         shutdown_server();
         return 0;
     }
+    expectingDeaths++;
     struct msg* msg = next_msg();
     assert(msg->type == ADDRESS);
     assert(getNodeAddr(NID2) != fake);
@@ -49,7 +50,6 @@ int main() {
     assert(WIFEXITED(status));
     assert(WEXITSTATUS(status) == 0);
 
-    expectingDeaths++;
     assert(next_msg_now() == NULL);
     shutdown_server();
     assert(expectingDeaths == 0);
