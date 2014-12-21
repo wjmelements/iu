@@ -109,6 +109,65 @@ void iterative_test() {
     shutdown_server();
 }
 
+void stream_test() {
+    init_server();
+    assert(next_msg_now() == NULL);
+    stream<msg*>* in = send_stream(me());
+    assert(in != NULL);
+    assert(next_msg_now() == NULL);
+    struct heartbeat_msg* hmsg = (heartbeat_msg*) Malloc(sizeof(heartbeat_msg));
+    new (hmsg) heartbeat_msg;
+    in->put(hmsg);
+
+    struct msg* next = next_msg();
+    assert(next != NULL);
+    assert(next->type = HEARTBEAT);
+    free(next);
+    
+    assert(next_msg_now() == NULL);
+    in->close();
+    assert(next_msg_now() == NULL);
+
+    delete in;
+    shutdown_server();
+}
+void two_stream_test() {
+    init_server();
+    assert(next_msg_now() == NULL);
+    stream<msg*>* in1 = send_stream(me());
+    stream<msg*>* in2 = send_stream(me());
+    assert(in1 != NULL);
+    assert(in2 != NULL);
+    assert(next_msg_now() == NULL);
+
+    struct heartbeat_msg* hmsg1 = (heartbeat_msg*) Malloc(sizeof(heartbeat_msg));
+    struct heartbeat_msg* hmsg2 = (heartbeat_msg*) Malloc(sizeof(heartbeat_msg));
+    new (hmsg1) heartbeat_msg;
+    new (hmsg2) heartbeat_msg;
+    in1->put(hmsg1);
+    in2->put(hmsg2);
+
+    struct msg* next = next_msg();
+    assert(next != NULL);
+    assert(next->type == HEARTBEAT);
+    free(next);
+    
+    for (size_t i = 0; i < 100; i++) {
+        assert(next_msg_now() == NULL);
+        sched_yield();
+    }
+    in1->close();
+    next = next_msg();
+    assert(next != NULL);
+    assert(next->type == HEARTBEAT);
+    free(next);
+    assert(next_msg_now() == NULL);
+    in2->close();
+
+    delete in1, in2;
+    shutdown_server();
+}
+
 int main() {
     pid_t pid = Fork();
     recycle_test();
@@ -128,6 +187,12 @@ int main() {
     }
     for (size_t i = 0; i < 5; i++) {
         iterative_test();
+    }
+    for (size_t i = 0; i < 5; i++) {
+        stream_test();
+    }
+    for (size_t i = 0; i < 5; i++) {
+        two_stream_test();
     }
 
     int status;

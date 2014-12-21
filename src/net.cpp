@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -64,7 +65,8 @@ port_t init_server(port_t port) {
     bzero(&addr, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = port;
-    int binded = bind(fd, (struct sockaddr*) &addr, sizeof(addr));
+    socklen_t len = sizeof(addr);
+    int binded = bind(fd, &uaddr.saddr, len);
     if (binded == -1) {
         perror("bind");
         exit(errno);
@@ -75,8 +77,7 @@ port_t init_server(port_t port) {
         exit(errno);
     }
     server_fd = fd;
-    socklen_t len = sizeof(addr);
-    int got = getsockname(server_fd, (struct sockaddr*) &addr, &len);
+    int got = getsockname(fd, &uaddr.saddr, &len);
     if (got == -1) {
         perror("getsockname");
         exit(errno);
@@ -96,6 +97,8 @@ const addr_t& getNodeAddr(nid_t nid) {
 
 static map<int, nid_t> nids;
 static map<nid_t, int> connections;
+static map<nid_t, stream<msg*>* > send_qs;
+static map<nid_t, key<msg*>* > send_keys;
 
 struct pollfd* getPollfds() {
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
@@ -112,6 +115,14 @@ void shutdown_server() {
     nids.clear();
     connections.clear();
     pollfds_vector.clear();
+    for (auto pair : send_qs) {
+        delete pair.second;
+    }
+    send_qs.clear();
+    for (auto pair : send_keys) {
+        free(pair.second);
+    }
+    send_keys.clear();
     Close(server_fd);
 }
 
@@ -128,7 +139,7 @@ static struct msg* recv_msg(int fd) {
             // retry
             return NULL;
         default:
-            perror("recv:recv_msg");
+            perror("recv:recv_msg:peek");
             exit(errno);
         }
     }
@@ -141,7 +152,7 @@ static struct msg* recv_msg(int fd) {
         return NULL;
     }
     //printf("message type %u received by %u, size %u\n", rcvd.type, me(), rcvd.length);
-    struct msg* ret = (struct msg*) malloc(rcvd.length);
+    struct msg* ret = (struct msg*) Malloc(rcvd.length);
     bytes = recv(fd, ret, rcvd.length, 0);
     if (bytes == -1) {
         switch (errno) {
@@ -170,10 +181,27 @@ static int accept_connection() {
 }
 
 struct msg* next_msg_same() {
-    return recv_msg(last_fd);
+    struct pollfd pollfd;
+    while (1) {
+        pollfd.fd = last_fd;
+        pollfd.events = POLLIN | POLLRDHUP;
+        pollfd.revents = 0;
+        Poll(&pollfd, 1, 0);
+        if (!pollfd.revents) {
+            net_idle();
+            sched_yield();
+        } else if (pollfd.revents & POLLIN) {
+            return recv_msg(last_fd);
+        } else if (pollfd.revents & POLLRDHUP) {
+            believeDead(nids[last_fd]);
+            return NULL;
+        }
+    }
 }
 
-int connect_to(nid_t nid) {
+static bool send_msg_now(const struct msg* to_send, nid_t nid);
+
+static int connect_to(nid_t nid) {
     int fd = Socket();
     auto address = addresses.find(nid);
     if (address == addresses.end()) {
@@ -193,23 +221,19 @@ int connect_to(nid_t nid) {
     }
     connections.insert(pair<nid_t, int>(nid, fd));
     nids.insert(pair<int, nid_t>(fd, nid));
-    identity_msg idm;
-    send_msg(&idm, nid);
+    stream<msg*>* const strm = send_qs[nid] = new stream<msg*>(/*listeners*/ 1);
+    send_keys[nid] = strm->listen();
     addPollFd(fd);
+
+    identity_msg idm;
+    send_msg_now(&idm, nid);
+
     return fd;
 }
 
-bool send_msg(const struct msg* to_send, nid_t nid) {
+static bool send_msg_now(const struct msg* to_send, nid_t nid) {
     auto iterator = connections.find(nid);
-    int fd;
-    if (iterator == connections.end()) {
-        fd = connect_to(nid);
-        if (fd == -1) {
-            return false;
-        }
-    } else {
-        fd = iterator->second;
-    }
+    int fd = iterator->second;
     struct pollfd pollfd;
     pollfd.fd = fd;
     pollfd.events = POLLHUP;
@@ -224,7 +248,6 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
             //printf("3 %u\n", nid);
             believeDead(nid);
             return false;
-
         }
     }
     ssize_t sent = send(fd, to_send, to_send->length, 0);
@@ -241,6 +264,52 @@ bool send_msg(const struct msg* to_send, nid_t nid) {
         exit(errno);
     }
     return true;
+}
+
+bool send_msg(const struct msg* msg, nid_t nid) {
+    auto send_q = send_qs.find(nid);
+    if (send_q == send_qs.end()) {
+        int fd = connect_to(nid);
+        if (fd == -1) {
+            return false;
+        }
+        send_q = send_qs.find(nid);
+    }
+    if (empty(send_keys[nid])) {
+        // can send now
+        return send_msg_now(msg, nid);
+    }
+    // put in queue and send later
+    struct msg* const copy = (struct msg*) malloc(msg->length);
+    memcpy(copy, msg, msg->length);
+    send_q->second->put(copy);
+    return true;
+}
+stream<msg*>* send_stream(nid_t nid) {
+    auto send_q = send_qs.find(nid);
+    if (send_q == send_qs.end()) {
+        int fd = connect_to(nid);
+        if (fd == -1) {
+            return NULL;
+        }
+        send_q = send_qs.find(nid);
+    }
+    stream<msg*>* ret = new stream<msg*>(/*listeners*/ 1);
+    key<msg*>* key = ret->listen();
+    send_q->second->give(key);
+    free(key);
+    return ret;
+}
+
+static void send_readies() {
+    // TODO round-robin this
+    for (auto pair : send_keys) {
+        while (ready(pair.second)) {
+            msg* next = from(pair.second);
+            send_msg_now(next, pair.first);
+            free(next);
+        }
+    }
 }
 
 struct msg* next_msg_now() {
@@ -263,27 +332,26 @@ struct msg* next_msg_now() {
             break;
         }
     }
-    int fd;
     if (poll_fds[start].fd == server_fd) {
-        fd = accept_connection();
-    } else {
-        fd = poll_fds[start].fd;
-        if (poll_fds[start].revents & POLLRDHUP) {
-            nid_t peer = nids[fd];
-            // peer has closed their write end
-            if (peer != -1) {
-                believeDead(peer);
-            }
-
-            int fd = poll_fds[start].fd;
-            Close(fd);
-            nids.erase(fd);
-            // do not care about events on this fd anymore
-            poll_fds[start].fd = -fd;
-            return next_msg_now();
-        }
-        assert(poll_fds[start].revents & POLLIN);
+        accept_connection();
+        return next_msg_now();
     }
+    int fd = poll_fds[start].fd;
+    if (poll_fds[start].revents & POLLRDHUP) {
+        nid_t peer = nids[fd];
+        // peer has closed their write end
+        if (peer != -1) {
+            believeDead(peer);
+        }
+
+        int fd = poll_fds[start].fd;
+        Close(fd);
+        nids.erase(fd);
+        // do not care about events on this fd anymore
+        poll_fds[start].fd = -fd;
+        return next_msg_now();
+    }
+    assert(poll_fds[start].revents & POLLIN);
     struct msg* ret = recv_msg(fd);
     if (ret == NULL) {
         return next_msg_now();
@@ -299,8 +367,12 @@ struct msg* next_msg() {
         if (ret) {
             return ret;
         } else {
-            prunePollFds();
+            net_idle();
             sched_yield();
         }
     }
+}
+void net_idle() {
+    prunePollFds();
+    send_readies();
 }

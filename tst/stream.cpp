@@ -102,6 +102,7 @@ void test_weave() {
         char actual = from(out_key);
         assert(let == actual);
     }
+    assert(empty(out_key));
     assert(!ready(out_key));
     out->close();
     assert(closed(out_key));
@@ -189,6 +190,7 @@ void test_giveafter() {
     key<char>* out_key = out->listen();
     stream<char>* to_give = new stream<char>(1);
     key<char>* key_to_give = to_give->listen();
+    assert(empty(out_key));
     for (char let = 'a'; let <= 'z'; let++) {
         out->put(let);
         to_give->put(let);
@@ -200,10 +202,13 @@ void test_giveafter() {
             assert(let == actual);
         }
     }
+    assert(!empty(out_key));
     out->close();
     to_give->close();
+    assert(empty(out_key));
     assert(closed(out_key));
     assert(depleted(out_key));
+    assert(empty(out_key));
     delete out;
     free(out_key);
     delete to_give;

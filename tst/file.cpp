@@ -25,6 +25,10 @@ int main() {
     test_size(1024);
     test_size(0);
     test_size(1000);
+    test_size(2000);
+    test_size(3000);
+    test_size(10000);
+    test_size(100000);
 
     shutdown_server();
     return 0;
