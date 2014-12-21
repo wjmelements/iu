@@ -17,6 +17,8 @@
 #define QUEUE_ID 42
 #define QUEUE_PATH "./.iuctl_q"
 
+#define SERVER_EXEC "bin/server"
+
 static int msg_q;
 static void init_iuctl(bool creat) {
     if(creat) {
@@ -44,11 +46,31 @@ void join_iuctl() {
 void destroy_iuctl() {
     msgctl(msg_q, IPC_RMID, NULL);
 }
-/* TODO */
+void handle_iuctls() {
+    iuctl_msg_t msg;
+    int res = recv_iuctl(ANY, &msg, sizeof(msg));
+    if(res != 0) {
+        return;
+    }
+    switch(msg->ctype) {
+        case STATUSREQ:
+            break;
+        default:
+            fprintf(stderr, "Error, invalid iuctl message type\n");
+            break;
+    }
+}
 void status_iuctl() {
+    // TODO Check if process is running
+    FILE* fd = popen("pgrep " SERVER_EXEC, "r");
+    int res = pclose(fd);
+    if(res != 1)
+        return;
     iuctl_msg_t msg;
     msg.ctype = STATUSREQ;
     send_iuctl(&msg, sizeof(msg));
+    while(recv_iuctl(STATUS, &msg, sizeof(msg)));
+    printf("status: %d\n", msg.status);
 }
 void send_iuctl(void* msg, size_t size) {
     int res = msgsnd(msg_q, msg, size - sizeof(long), 0);

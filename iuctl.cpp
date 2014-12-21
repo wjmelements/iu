@@ -23,7 +23,7 @@ iuctl [command] [params...]\n\
 void print_help(void) {
     puts(help);
 }
-void print_status() {
+void print_status(void) {
     status_iuctl();
 }
 int main(int argc, char* argv[]) {

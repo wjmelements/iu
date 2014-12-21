@@ -2,9 +2,13 @@
 #include <sys/types.h>
 
 enum ctl_t {
+    ANY = 0,
+    IUCTL_REQ, // any request from iuctl to server will have this mtype to simplify message retrieval
     LEARN_PORT,
-    STATUSREQ,
-    STATUS,
+};
+
+enum req_t {
+    STATUS = 1,
 };
 
 typedef struct iuctl_msg {
@@ -12,7 +16,7 @@ typedef struct iuctl_msg {
         long mtype;
         ctl_t ctype;
     };
-    int status;
+    req_t req;
 } iuctl_msg_t;
 
 void init_iuctl();
