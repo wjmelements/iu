@@ -1,7 +1,7 @@
 /*
  * This library provides a dataflow programming framework through message
  * broadcasting to a number of listeners.
- * Copyright (C) 2013 William Morriss
+ * Copyright (C) 2013-2014 William Morriss
  */
 #ifndef scion_stream_h
 #define scion_stream_h
@@ -58,6 +58,7 @@ template <typename T> class stream {
         bool closed();
         bool depleted(size_t id);
         bool canceled(size_t id);
+        bool empty(size_t id);
         // broadcaster activies
         void put(const T data);
         void give(const key<T>* other);
@@ -89,6 +90,10 @@ template <typename T> bool canceled(const key<T>* access) {
 // possibly blocking call that checks whether there remain any things to get
 template <typename T> bool depleted(const key<T>* access) {
     return access->source->depleted(access->id);
+}
+// non-blocking call that checks if there are any elements or given streams
+template <typename T> bool empty(const key<T>* access) {
+    return access->source->empty(access->id);
 }
 // cancel subscription to the stream
 template <typename T> void cancel(const key<T>* access) {
@@ -250,8 +255,33 @@ template<typename T> void stream<T>::skip(size_t id) {
 template<typename T> bool stream<T>::closed() {
     return off;
 }
+template<typename T> bool stream<T>::empty(size_t id) {
+    node<T> *const node = *listeners[id];
+    if (node == NULL) {
+        return true;
+    }
+    if (!node->other) {
+        return false;
+    }
+    bool closed = node->other->proxy->closed();
+    if (!closed) {
+        return false;
+    }
+    if (node->other->proxy->empty(node->id)) {
+        listeners[id] = &node->next;
+        return empty(id);
+    }
+    return false;
+}
 template<typename T> bool stream<T>::ready(size_t id) {
-    return *listeners[id] != NULL;
+    node<T> const *const node = *listeners[id];
+    if (node == NULL) {
+        return false;
+    }
+    if (!node->other) {
+        return true;
+    }
+    return node->other->proxy->ready(node->id);
 }
 template<typename T> bool stream<T>::canceled(size_t id) {
     return listeners[id] == NULL;
@@ -292,8 +322,9 @@ template<typename T> void stream<T>::sweep() {
     node<T>* iter = first;
     // it is impossible for iter to be NULL because we have just added something
     for (size_t id = 0; id < max_ports; ++id) {
-        if (listeners[id]) {
-            if (*listeners[id] == iter) {
+        node<T>*volatile *const listener = listeners[id];
+        if (listener) {
+            if (*listener == iter) {
                 return;
             }
         }
