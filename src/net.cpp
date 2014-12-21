@@ -145,10 +145,11 @@ static struct msg* recv_msg(int fd) {
     }
     // should have been caught by RDHUP
     if (bytes == 0) {
-        nid_t node = nids[fd];
+        nid_t nid = nids[fd];
         nids.erase(fd);
+        connections.erase(nid);
         //printf("1 %u\n", node);
-        believeDead(node);
+        believeDead(nid);
         return NULL;
     }
     //printf("message type %u received by %u, size %u\n", rcvd.type, me(), rcvd.length);
@@ -337,23 +338,19 @@ struct msg* next_msg_now() {
         return next_msg_now();
     }
     int fd = poll_fds[start].fd;
+    bool negate_on_null = false;
     if (poll_fds[start].revents & POLLRDHUP) {
-        nid_t peer = nids[fd];
         // peer has closed their write end
-        if (peer != -1) {
-            believeDead(peer);
-        }
-
-        int fd = poll_fds[start].fd;
-        Close(fd);
-        nids.erase(fd);
-        // do not care about events on this fd anymore
-        poll_fds[start].fd = -fd;
-        return next_msg_now();
+        // still have to receive last messages
+        negate_on_null = true;
     }
     assert(poll_fds[start].revents & POLLIN);
     struct msg* ret = recv_msg(fd);
     if (ret == NULL) {
+        if (negate_on_null) {
+            // do not care about events on this fd anymore
+            poll_fds[start].fd = -fd;
+        }
         return next_msg_now();
     }
     last_fd = fd;
