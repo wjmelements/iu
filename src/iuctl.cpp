@@ -44,6 +44,9 @@ void join_iuctl() {
 void destroy_iuctl() {
     msgctl(msg_q, IPC_RMID, NULL);
 }
+void handle_iuctls() {
+    return;
+}
 /* TODO */
 void status_iuctl() {
     iuctl_msg_t msg;

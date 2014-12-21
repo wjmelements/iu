@@ -47,6 +47,7 @@ distcheck dist-check:
 $(MKDIRS):
 	@mkdir -p $@
 $(EXECS): | bin
+bin/server: lib/iuctl.o
 bin/%: %.cpp
 	$(CPP) $(CXXFLAGS) $(INCLUDE) $^ -o $@
 bin/%: %.c

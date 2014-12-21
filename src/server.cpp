@@ -1,5 +1,6 @@
 #include "node.h"
 #include "server.h"
+#include "iuctl.h"
 
 bool isServer() {
     return true;
@@ -17,6 +18,7 @@ void server_handle_msg(const msg* curr) {
 void main_loop() {
     while (1) {
         struct msg* next = next_msg_now();
+        handle_iuctls();
         if (next != NULL) {
             server_handle_msg(next);
             free(next);
