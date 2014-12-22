@@ -1,12 +1,14 @@
 SHELL=/bin/bash
 CC=gcc
 CPP=g++
-CFLAGS=-O3 -fdiagnostics-color=auto -pthread -std=gnu11 -g
-CXXFLAGS=$(filter-out -std=gnu11, $(CFLAGS)) -std=gnu++11 -fno-exceptions -Wno-write-strings -Wno-pointer-arith
+CCSTD=-std=gnu11
+CXXSTD=-std=gnu++11
+CFLAGS=-O3 -fdiagnostics-color=auto -pthread -g $(CCSTD)
+CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-strings -Wno-pointer-arith
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin
 INCLUDE=$(addprefix -I,include)
 EXECS=$(addprefix bin/,client server iuctl)
-TESTS=$(addprefix tst/bin/,capitalC stream msg net file node messenger iuctl)
+TESTS=$(addprefix tst/bin/,capitalC stream mpsc msg net file node messenger iuctl)
 
 .PHONY: default all clean again check distcheck dist-check
 .SECONDARY:
@@ -20,10 +22,10 @@ check: $(addprefix .pass/,$(TESTS))
 FNM=\([a-z_A-Z/]*\)
 .make/%.d: %.c
 	@mkdir -p $(@D)
-	@$(CC) -MM $(INCLUDE) $< -o $@
+	@$(CC) -MM $(CCSTD) $(INCLUDE) $< -o $@
 .make/%.d: %.cpp
 	@mkdir -p $(@D)
-	$(CPP) -MM $(INCLUDE) $< -o $@
+	$(CPP) -MM $(CXXSTD) $(INCLUDE) $< -o $@
 .make/bin/%.d: .make/%.d | .make/bin
 	@sed 's/include\/$(FNM).h/lib\/\1.o/g' $< > $@
 	@sed -i 's/$(FNM).o:/bin\/\1:/g' $@
