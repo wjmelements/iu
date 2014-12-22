@@ -7,11 +7,11 @@ using std::atomic;
 template <typename T> struct mpsc {
 private:
     struct node {
-        node* next;
+        node* volatile next;
         T data;
     };
-    struct node*first;
-    atomic<node*> last;
+    struct node* first;
+    atomic<node*> volatile last;
 public:
     mpsc() {
         first = (node*) Malloc(sizeof(*first));
@@ -25,17 +25,17 @@ public:
         }
     };
     void put(T item) {
-        struct node* proposal = (node*) Malloc(sizeof(*proposal));
+        struct node* const proposal = (node*) Malloc(sizeof(*proposal));
         proposal->data = item;
         proposal->next = NULL;
-        struct node* prev = atomic_exchange(&last, proposal);
+        struct node* const prev = atomic_exchange(&last, proposal);
         prev->next = proposal;
     };
     const T* get() {
         if (!first->next) {
             return NULL;
         }
-        node* to_delete = first;
+        struct node* const to_delete = first;
         first = first->next;
         free(to_delete);
         return &first->data;
