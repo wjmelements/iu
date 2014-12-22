@@ -8,7 +8,7 @@ CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin
 INCLUDE=$(addprefix -I,include)
 EXECS=$(addprefix bin/,client server iuctl)
-TESTS=$(addprefix tst/bin/,capitalC stream mpsc msg net file node messenger iuctl)
+TESTS=$(addprefix tst/bin/,capitalC stream mpsc msg net todo file node messenger iuctl)
 
 .PHONY: default all clean again check distcheck dist-check
 .SECONDARY:
