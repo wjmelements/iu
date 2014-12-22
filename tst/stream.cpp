@@ -11,19 +11,21 @@
 void* reader(void* arg) {
     key<char>* args = (key<char>*) arg;
     for (char expected = 'a'; expected <= 'z'; expected++) {
-        // cancel with probability ~1/32
-        cancel(args);
-        assert(canceled(args));
-        return NULL;
-        if (random() & 0x1F < 9) {
+        if ((random() & 0x1F) < 1) {
+            // cancel with probability ~1/32
+            cancel(args);
+            assert(canceled(args));
+            return NULL;
+        }
+        if ((random() & 0x1F) < 9) {
             // skip with probability ~75/256
             skip(args);
         } else {
-            if (random() & 0x1F < 9 ) {
+            if ((random() & 0x1F) < 9 ) {
                 // peek with probability ~41/200
                 char peeked = peek(args);
                 assert(expected == peeked);
-                peeked--;
+                expected--;
             } else {
                 // from with probability ~17/32
                 char actual = from(args);
