@@ -1,6 +1,6 @@
+#include "iuctl.h"
 #include "node.h"
 #include "server.h"
-#include "iuctl.h"
 
 bool isServer() {
     return true;
@@ -26,5 +26,6 @@ void main_loop() {
             // non-critical maintenance here
         }
         // recurring maintenance here
+        do_todos();
     }
 }

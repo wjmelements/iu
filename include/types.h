@@ -37,6 +37,7 @@ bool operator !=(const addr_t&, const addr_t&);
 typedef uint64_t nid_t;
 typedef uint64_t size_t;
 typedef uint64_t seq_t;
+typedef void (*func_t)(void*);
 
 enum item_type {
     ITEM_TEXT,
