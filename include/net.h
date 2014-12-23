@@ -6,7 +6,7 @@
 #include "stream.h"
 #include "types.h"
 
-port_t init_server(port_t port = 0);
+addr_t init_server(port_t port = 0);
 void setNodeAddr(nid_t nid, const addr_t* addr); 
 
 // receive stream in which to add messages and then close
@@ -29,6 +29,11 @@ nid_t msg_source();
 
 // do maintenance
 void net_idle();
+
+// do not poll from nid_t
+void net_suspend(nid_t nid);
+// resume polling from nid_t
+void net_resume(nid_t nid);
 
 // orderly shutdown
 void shutdown_server();

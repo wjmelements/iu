@@ -57,12 +57,12 @@ static void prunePollFds() {
 }
 static size_t start; // for round-robin
 static map<nid_t, addr_t> addresses;
-port_t init_server(port_t port) {
+addr_t init_server(port_t port) {
     start = 0;
     int fd = Socket();
     addr_t uaddr;
+    bzero(&uaddr, sizeof(uaddr));
     struct sockaddr_in& addr = uaddr.siaddr4;;
-    bzero(&addr, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = port;
     socklen_t len = sizeof(addr);
@@ -84,15 +84,20 @@ port_t init_server(port_t port) {
     }
     addPollFd(fd);
     setNodeAddr(me(), &uaddr);
-    return addr.sin_port;
+    return uaddr;
 }
 
 void setNodeAddr(nid_t nid, const addr_t* addr) {
+    // TODO emplace
     addresses[nid] = *addr;
 }
 // used primarily for unit testing
 const addr_t& getNodeAddr(nid_t nid) {
-    return addresses[nid];
+    auto it = addresses.find(nid);
+    if (it == addresses.end()) {
+        assert(0 && "getNodeaddr");
+    }
+    return it->second;
 }
 
 static map<int, nid_t> nids;
@@ -105,6 +110,29 @@ struct pollfd* getPollfds() {
         bzero(&it->revents, sizeof(it->revents));
     }
     return pollfds_vector.data();
+}
+
+void net_suspend(nid_t nid) {
+    // FIXME better efficiency here
+    auto nit = connections.find(nid);
+    if (nit == connections.end()) {
+        return;
+    }
+    int fd = nit->second;
+    for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
+        if (it->fd == fd) {
+            pollfds_vector.erase(it);
+            return;
+        }
+    };
+}
+void net_resume(nid_t nid) {
+    auto nit = connections.find(nid);
+    if (nit == connections.end()) {
+        return;
+    }
+    int fd = nit->second;
+    addPollFd(fd);
 }
 
 void shutdown_server() {
@@ -170,13 +198,18 @@ static struct msg* recv_msg(int fd) {
 }
 
 static int accept_connection() {
-    int fd = Accept(server_fd, NULL, NULL);
+    addr_t addr;
+    socklen_t len = sizeof(addr);
+    int fd = Accept(server_fd, &addr.saddr, &len);
     struct msg* msg = recv_msg(fd);
     struct identity_msg* id_msg = (struct identity_msg*) msg;
     nid_t nid = id_msg->sender;
     free(id_msg);
+    setNodeAddr(nid, &addr);
     nids.insert(std::pair<int, nid_t>(fd, nid));
     connections.insert(std::pair<nid_t, int>(nid, fd));
+    stream<struct msg*>* const strm = send_qs[nid] = new stream<struct msg*>(/*listeners*/ 1);
+    send_keys[nid] = strm->listen();
     addPollFd(fd);
     return fd;
 }
@@ -209,7 +242,7 @@ static int connect_to(nid_t nid) {
         fprintf(stderr, "No known address for node %u\n", nid);
         return -1;
     }
-    addr_t addr = address->second;
+    const addr_t addr = address->second;
     int connected = connect(fd, &addr.saddr, sizeof(addr));
     if (connected == -1) {
         Close(fd);
@@ -220,8 +253,8 @@ static int connect_to(nid_t nid) {
         perror("connect");
         exit(errno);
     }
-    connections.insert(pair<nid_t, int>(nid, fd));
     nids.insert(pair<int, nid_t>(fd, nid));
+    connections.insert(pair<nid_t, int>(nid, fd));
     stream<msg*>* const strm = send_qs[nid] = new stream<msg*>(/*listeners*/ 1);
     send_keys[nid] = strm->listen();
     addPollFd(fd);
@@ -281,7 +314,7 @@ bool send_msg(const struct msg* msg, nid_t nid) {
         return send_msg_now(msg, nid);
     }
     // put in queue and send later
-    struct msg* const copy = (struct msg*) malloc(msg->length);
+    struct msg* const copy = (struct msg*) Malloc(msg->length);
     memcpy(copy, msg, msg->length);
     send_q->second->put(copy);
     return true;

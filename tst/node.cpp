@@ -24,10 +24,11 @@ int main() {
     assert(me() == NID);
     pid_t pid = Fork();
     if (!pid) {
+        const addr_t parent_addr = getNodeAddr(NID);
         shutdown_server();
         
         init_node(NID2, LOC);
-        
+        setNodeAddr(NID, &parent_addr);
         addr_msg amsg(me(), &fake);
         bool sent = send_msg(&amsg, NID);
         assert(sent);
