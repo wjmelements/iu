@@ -37,8 +37,10 @@ void* reader(void* arg) {
         // cancel with probability ~1/32
         cancel(args);
         assert(canceled(args));
+    } else {
+        assert(depleted(args));
+        assert(closed(args));
     }
-    assert(closed(args));
     return EXIT_SUCCESS;
 }
 // thread to populate a stream with the charaters g to s and then close

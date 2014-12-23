@@ -24,6 +24,7 @@ void main_loop() {
         } else {
             handle_iuctls();
             // non-critical maintenance here
+            net_idle();
         }
         // recurring maintenance here
         do_todos();
