@@ -125,6 +125,7 @@ void net_suspend(nid_t nid) {
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
         if (it->fd == fd) {
             it->fd = -fd;
+            pollfds_vector.erase(it);
             return;
         }
     };
@@ -209,7 +210,7 @@ static struct msg* recv_msg(int fd) {
     return ret;
 }
 
-static struct msg* next_msg_from_fd(int fd) {
+struct msg* next_msg_from_fd(int fd) {
     struct pollfd pollfd;
     while (1) {
         pollfd.fd = fd;
