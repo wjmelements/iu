@@ -121,7 +121,7 @@ void net_suspend(nid_t nid) {
     int fd = nit->second;
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
         if (it->fd == fd) {
-            pollfds_vector.erase(it);
+            it->fd = -fd;
             return;
         }
     };
@@ -176,7 +176,7 @@ static struct msg* recv_msg(int fd) {
         nid_t nid = nids[fd];
         nids.erase(fd);
         connections.erase(nid);
-        //printf("1 %u\n", node);
+        //printf("1 %u\n", nid);
         believeDead(nid);
         return NULL;
     }
@@ -214,10 +214,10 @@ static int accept_connection() {
     return fd;
 }
 
-struct msg* next_msg_same() {
+static struct msg* next_msg_from_fd(int fd) {
     struct pollfd pollfd;
     while (1) {
-        pollfd.fd = last_fd;
+        pollfd.fd = fd;
         pollfd.events = POLLIN | POLLRDHUP;
         pollfd.revents = 0;
         Poll(&pollfd, 1, 0);
@@ -225,12 +225,18 @@ struct msg* next_msg_same() {
             net_idle();
             sched_yield();
         } else if (pollfd.revents & POLLIN) {
-            return recv_msg(last_fd);
+            return recv_msg(fd);
         } else if (pollfd.revents & POLLRDHUP) {
-            believeDead(nids[last_fd]);
+            believeDead(nids[fd]);
             return NULL;
         }
     }
+}
+struct msg* next_msg_same() {
+    return next_msg_from_fd(last_fd);
+}
+struct msg* next_msg_from(nid_t nid) {
+    return next_msg_from_fd(connections.find(nid)->second);
 }
 
 static bool send_msg_now(const struct msg* to_send, nid_t nid);

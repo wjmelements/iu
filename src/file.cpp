@@ -49,18 +49,60 @@ void send_file(int fd, nid_t dest) {
     Pthread_create(&thread, NULL, send_file_thread, arg);
     Pthread_detach(thread);
 }
-int recv_file(void) {
+struct finisher_arg {
+    nid_t source;
+};
+void recv_file_finisher(void* farg) {
+    struct finisher_arg* arg = (finisher_arg*) farg;
+    nid_t source = arg->source;
+    free(arg);
+
+    net_resume(source);
+}
+struct rcv_arg {
+    nid_t source;
+    func_t callback;
+    void* arg;
+};
+void* recv_file_deputy(void* darg) {
+    struct rcv_arg* rarg = (rcv_arg*) darg;
+    nid_t source = rarg->source;
+    func_t callback = rarg->callback;
+    void* arg = rarg->arg;
+    free(rarg);
+
     int fd = Open("/tmp", O_RDWR | O_EXCL | O_TMPFILE);
-    struct msg* header = next_msg_same();
+    struct msg* header = next_msg_from(source);
     struct file_header* fheader = (struct file_header*) header;
     size_t num_chunks = fheader->num_chunks;
     free(fheader);
     // FIXME aio?
     for (size_t i = 0; i < num_chunks; i++) {
-        struct file_chunk* fchunk = (struct file_chunk*) next_msg_same();
+        struct file_chunk* fchunk = (struct file_chunk*) next_msg_from(source);
         Write(fd, &fchunk->bytes, fchunk->getChunkSize());
         free(fchunk);
     }
     Lseek(fd, 0, SEEK_SET);
-    return fd;
+
+    struct finisher_arg* finarg = (finisher_arg*) Malloc(sizeof(finisher_arg));
+    finarg->source = source;
+    add_todo(recv_file_finisher, finarg);
+
+    struct ffarg_t* farg = (struct ffarg_t*) Malloc(sizeof(ffarg_t));
+    farg->fd = fd;
+    farg->arg = arg;
+    add_todo(callback, farg);
+}
+void recv_file(func_t callback, void* arg) {
+    nid_t source = msg_source();
+    net_suspend(source);
+
+    struct rcv_arg* rarg = (rcv_arg*) Malloc(sizeof(rcv_arg));
+    rarg->source = source;
+    rarg->callback = callback;
+    rarg->arg = arg;
+
+    pthread_t child;
+    Pthread_create(&child, NULL, recv_file_deputy, rarg);
+    Pthread_detach(child);
 }

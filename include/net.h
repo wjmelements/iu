@@ -22,6 +22,7 @@ bool send_msg(const struct msg* msg, nid_t nid);
 struct msg* next_msg();
 // blocking, returns NULL on hangup only
 struct msg* next_msg_same();
+struct msg* next_msg_from(nid_t nid);
 // nonblocking
 struct msg* next_msg_now();
 // source of last message
