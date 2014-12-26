@@ -17,7 +17,7 @@ typedef struct iuctl_msg {
 } iuctl_msg_t;
 
 void init_iuctl();
-void join_iuctl();
+int join_iuctl();
 void destroy_iuctl();
 
 // called by only iuctl

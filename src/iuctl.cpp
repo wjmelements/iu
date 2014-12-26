@@ -46,11 +46,11 @@ void init_iuctl() {
     write(fd, self_pid_str, strlen(self_pid_str));
     init_iuctl(true);
 }
-void join_iuctl() {
+int join_iuctl() {
     int fd = open(QUEUE_PATH, O_RDONLY);
     if(fd < 0) {
-        perror("Open");
-        return;
+        perror("open");
+        return -1;
     }
     char server_pid_str[32];
     read(fd, server_pid_str, sizeof(server_pid_str));
@@ -60,22 +60,27 @@ void join_iuctl() {
     readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
     self_pid = atoi(self_pid_str);
     assert(self_pid > 0);
+    printf("%d\n", self_pid);
     init_iuctl(false);
+    return 0;
 }
 void destroy_iuctl() {
     msgctl(msg_q, IPC_RMID, NULL);
-}
-void handle_iuctls() {
-    iuctl_msg_t msg;
-    if(recv_iuctl(self_pid, &msg, sizeof(msg)) == 0) {
-        printf("Received message from %d\n", msg.mtext.pid);
-    }
-    return;
 }
 void init_iuctl_msg(iuctl_msg_t* msg) {
     bzero(msg, sizeof(*msg));
     msg->mtext.pid = self_pid;
     msg->mtype = server_pid;
+}
+void handle_iuctls() {
+    iuctl_msg_t msg;
+    if(recv_iuctl(self_pid, &msg, sizeof(msg)) == 0) {
+        pid_t iuctl_pid = msg.mtext.pid;
+        init_iuctl_msg(&msg);
+        msg.mtype = iuctl_pid;
+        send_iuctl(&msg, sizeof(msg));
+    }
+    return;
 }
 /* TODO */
 void status_iuctl() {
@@ -94,7 +99,7 @@ void send_iuctl(void* msg, size_t size) {
     }
 }
 int recv_iuctl(int mtype, void* buf, size_t size) {
-    int res = msgrcv(msg_q, &buf, size - sizeof(long), mtype, IPC_NOWAIT);
+    int res = msgrcv(msg_q, buf, size - sizeof(long), mtype, IPC_NOWAIT);
     if(res == -1) {
         return errno;
     }
