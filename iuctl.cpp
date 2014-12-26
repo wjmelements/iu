@@ -34,7 +34,9 @@ int main(int argc, char* argv[]) {
     /* Check if server is running */
     /* TODO */
     //init_iuctl();
-    join_iuctl();
+    if(join_iuctl() != 0) {
+        fprintf(stderr, "Error, is server running?\n");
+    }
     #define IS(index,str) (strcmp(argv[index], str) == 0)
     if (IS(1, HELP)) {
         print_help();
