@@ -31,6 +31,8 @@ int main(int argc, char* argv[]) {
         print_help();
         exit(EINVAL);
     }
+    /* Check if server is running */
+    /* TODO */
     //init_iuctl();
     join_iuctl();
     #define IS(index,str) (strcmp(argv[index], str) == 0)

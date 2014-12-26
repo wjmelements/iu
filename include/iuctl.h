@@ -8,11 +8,12 @@ enum ctl_t {
 };
 
 typedef struct iuctl_msg {
-    union {
-        long mtype;
+    long mtype;
+    struct {
+        pid_t pid;
         ctl_t ctype;
-    };
-    int status;
+        int status;
+    } mtext;
 } iuctl_msg_t;
 
 void init_iuctl();
@@ -28,4 +29,4 @@ void handle_iuctls();
 /* Size should be the size of the entire message
  * struct, including the leading long */
 void send_iuctl(void* msg, size_t size);
-int recv_iuctl(ctl_t mtype, void* buf, size_t size);
+int recv_iuctl(int mtype, void* buf, size_t size);
