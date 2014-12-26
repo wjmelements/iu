@@ -39,6 +39,9 @@ static void init_iuctl(bool creat) {
 }
 void init_iuctl() {
     int fd = open(QUEUE_PATH, O_WRONLY | O_CREAT | O_TRUNC);
+    if(fd < 0) {
+        perror("init_iuctl: open");
+    }
     char self_pid_str[32];
     readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
     self_pid = atoi(self_pid_str);
@@ -56,6 +59,10 @@ int join_iuctl() {
     read(fd, server_pid_str, sizeof(server_pid_str));
     server_pid = atoi(server_pid_str);
     assert(server_pid > 0);
+    if(kill(server_pid, 0) != 0) {
+        perror("kill");
+        return errno;
+    }
     char self_pid_str[32];
     readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
     self_pid = atoi(self_pid_str);
@@ -66,6 +73,7 @@ int join_iuctl() {
 }
 void destroy_iuctl() {
     msgctl(msg_q, IPC_RMID, NULL);
+    unlink(QUEUE_PATH);
 }
 void init_iuctl_msg(iuctl_msg_t* msg) {
     bzero(msg, sizeof(*msg));
@@ -76,11 +84,22 @@ void handle_iuctls() {
     iuctl_msg_t msg;
     if(recv_iuctl(self_pid, &msg, sizeof(msg)) == 0) {
         pid_t iuctl_pid = msg.mtext.pid;
-        init_iuctl_msg(&msg);
-        msg.mtype = iuctl_pid;
-        send_iuctl(&msg, sizeof(msg));
+        switch(msg.mtext.ctype) {
+            case STATUSREQ:
+                iuctl_server_status(iuctl_pid);
+                break;
+            default:
+                fprintf(stderr, "Received invalid message\n");
+                break;
+        }
     }
     return;
+}
+void iuctl_server_status(pid_t iuctl_pid) {
+    iuctl_msg_t msg;
+    init_iuctl_msg(&msg);
+    msg.mtype = iuctl_pid;
+    send_iuctl(&msg, sizeof(msg));
 }
 /* TODO */
 void status_iuctl() {
