@@ -17,5 +17,6 @@ int main(int argc, char* argv[]) {
     init_iuctl();
     init_node(atoll(argv[1]), static_cast<datacenter>(atol(argv[2])));
     main_loop();
+    destroy_iuctl();
     return 0;
 }

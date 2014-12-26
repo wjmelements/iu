@@ -30,3 +30,6 @@ void handle_iuctls();
  * struct, including the leading long */
 void send_iuctl(void* msg, size_t size);
 int recv_iuctl(int mtype, void* buf, size_t size);
+
+/* Message specific handlers */
+void iuctl_server_status(pid_t iuctl_pid);
