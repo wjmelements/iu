@@ -1,5 +1,6 @@
 #include "server.h"
 #include "node.h"
+#include "iuctl.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@ int main(int argc, char* argv[]) {
         print_usage();
         exit(EINVAL);
     }
+    init_iuctl();
     init_node(atoll(argv[1]), static_cast<datacenter>(atol(argv[2])));
     main_loop();
     return 0;
