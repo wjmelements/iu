@@ -17,16 +17,16 @@ static void add_sent(const item_msg* imsg, item_t& item) {
     sent[imsg->receiver][imsg->index] = item;
     messages[imsg->receiver].push_back(item);
 }
-static void add_received(const item_msg* imsg, item_t& item) {
-    received[imsg->sender][imsg->index] = item;
-    list<item_t>& items = messages[imsg->sender];
+static void add_received(nid_t sender, item_t& item) {
+    received[sender][item.index] = item;
+    list<item_t>& items = messages[sender];
     for (auto it = items.begin(); it != items.end(); it++) {
         if (it->received) {
-            if (imsg->index < it->index) {
+            if (item.index < it->index) {
                 items.insert(it, item);
                 return;
             }
-            if (imsg->index == it->index) {
+            if (item.index == it->index) {
                 // dupe
                 return;
             }
@@ -70,14 +70,33 @@ void messenger_text(const string& text, nid_t dest) {
     item.text[size] = '\0';
     add_sent(&item_text, item);
 }
+struct sfarg_t {
+    nid_t sender;
+    item_t* item;
+};
+void set_finished(void* arg) {
+    struct ffarg_t* farg = (ffarg_t*) arg;
+    sfarg_t* sfarg = (sfarg_t*) farg->arg;
+    item_t* item = sfarg->item;
+    item->fd = farg->fd;
+    free(farg);
+    add_received(sfarg->sender, *item);
+    free(item);
+    free(sfarg);
+}
 void handle_item_msg(const item_msg* imsg) {
-    item_t item;
-    item.type = imsg->itype;
-    item.index = imsg->index;
-    if (item.type == ITEM_FILE) {
-        item.saved = false;
-        item.fd = recv_file();
+    if (imsg->itype == ITEM_FILE) {
+        sfarg_t* sfarg = (sfarg_t*) Malloc(sizeof(sfarg_t));
+        sfarg->sender = imsg->sender;
+        item_t* item = sfarg->item = (item_t*) Malloc(sizeof(item_t));
+        item->type = imsg->itype;
+        item->index = imsg->index;
+        item->saved = false;
+        recv_file(set_finished, sfarg);
     } else {
+        item_t item;
+        item.type = imsg->itype;
+        item.index = imsg->index;
         msg* smsg = next_msg_same();
         const string_msg* str = (const string_msg*) smsg;
         size_t size = str->text_size();
@@ -85,8 +104,8 @@ void handle_item_msg(const item_msg* imsg) {
         memcpy(item.text, &str->text, size);
         item.text[size] = '\0';
         free(smsg);
+        add_received(imsg->sender, item);
     }
-    add_received(imsg, item);
 }
 void messenger_destroy() {
     for (auto it = messages.begin(); it != messages.end(); it++) {

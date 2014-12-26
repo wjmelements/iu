@@ -1,3 +1,10 @@
 #include "net.h"
+#include "todo.h"
 void send_file(int fd, nid_t dest);
-int recv_file(void);
+
+struct ffarg_t {
+    int fd;
+    void* arg;
+};
+
+void recv_file(func_t callback, void* arg);

@@ -1,7 +1,7 @@
 #include <assert.h>
 
 #ifndef REPS
-#define REPS 10000
+#define REPS 1000
 #endif
 
 #include "stream.h"

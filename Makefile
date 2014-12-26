@@ -3,7 +3,7 @@ CC=gcc
 CPP=g++
 CCSTD=-std=gnu11
 CXXSTD=-std=gnu++11
-CFLAGS=-O0 -fdiagnostics-color=auto -pthread -g $(CCSTD)
+CFLAGS=-O3 -fdiagnostics-color=auto -pthread -g $(CCSTD)
 CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-strings -Wno-pointer-arith
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin
 INCLUDE=$(addprefix -I,include)
