@@ -19,6 +19,7 @@ void test_size(size_t size);
 
 static size_t expecting = 0;
 void believeDead(nid_t nid) {
+    //printf("%lu believes %lu is dead\n", me(), nid);
     assert(expecting-- && believeDead);
 }
 static addr_t parent_addr;
@@ -115,4 +116,5 @@ void test_size(size_t size) {
 
     assert(next_msg_now() == NULL);
     net_idle();
+    assert(expecting == 0);
 }

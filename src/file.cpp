@@ -73,10 +73,9 @@ void* recv_file_deputy(void* darg) {
 
     int fd = Open("/tmp", O_RDWR | O_EXCL | O_TMPFILE);
     struct msg* header = next_msg_from(source);
-    struct file_header* fheader = (struct file_header*) header;
+    const struct file_header* fheader = (struct file_header*) header;
     size_t num_chunks = fheader->num_chunks;
-    free(fheader);
-    // FIXME aio?
+    free(header);
     for (size_t i = 0; i < num_chunks; i++) {
         struct file_chunk* fchunk = (struct file_chunk*) next_msg_from(source);
         Write(fd, &fchunk->bytes, fchunk->getChunkSize());
