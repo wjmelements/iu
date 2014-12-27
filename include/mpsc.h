@@ -15,12 +15,13 @@ private:
 public:
     mpsc() {
         first = (node*) Malloc(sizeof(*first));
-        last = first;
+        first->next.store(NULL);
+        last.store(first);
     };
     ~mpsc() {
         while (first) {
             node* to_delete = first;
-            first = first->next;
+            first = first->next.load();
             free(to_delete);
         }
     };
@@ -32,11 +33,11 @@ public:
         prev->next.store(proposal);
     };
     const T* get() {
-        if (!first->next) {
+        if (!first->next.load()) {
             return NULL;
         }
         struct node* const to_delete = first;
-        first = first->next;
+        first = first->next.load();
         free(to_delete);
         return &first->data;
     };
