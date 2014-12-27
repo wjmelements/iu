@@ -16,23 +16,24 @@
 
 typedef struct output_t {
     int retstat;
+    ssize_t nbytes;
     char* out[BUF_SIZE];
 } output_t;
 
 static pid_t server_pid;
 
 output_t* run(char* path, char** args, int nargs) {
-    output_t* output = (output_t*)malloc(sizeof(*output));
+    output_t* output = (output_t*) Malloc(sizeof(*output));
     int pfd[2];
-    pipe(pfd);
-    pid_t pid = fork();
-    if(pid == 0) {
-        close(pfd[0]);
+    Pipe(pfd);
+    pid_t pid = Fork();
+    if(!pid) {
+        Close(pfd[0]);
         char** argv;
         int argc = nargs + 1;
-        argv = (char**)malloc(argc + 1);
+        argv = (char**) Malloc(argc + 1);
         for(int i = 0; i < argc; i++) {
-            argv[i] = (char*)malloc(ARG_LEN);
+            argv[i] = (char*) Malloc(ARG_LEN);
         }
         argv[argc] = NULL;
         strcpy(argv[0], path);
@@ -40,28 +41,25 @@ output_t* run(char* path, char** args, int nargs) {
             assert(args[i - 1] != NULL);
             strcpy(argv[i], args[i - 1]);
         }
-        close(STDOUT);
-        dup2(pfd[0], 1);
+        Close(STDOUT);
+        dup2(pfd[1], STDOUT);
         execv(path, argv);
-    } else if(pid > 0) {
-        close(pfd[1]);
-        waitpid(pid, &output->retstat, 0);
-        read(pfd[0], output->out, BUF_SIZE);
-    } else {
-        perror("fork");
-        return NULL;
+        perror("execv");
     }
+    Close(pfd[1]);
+    waitpid(pid, &output->retstat, 0);
+    output->nbytes = read(pfd[0], output->out, BUF_SIZE);
     return output;
 }
 
 void run_server(char** args, int nargs) {
-    pid_t pid = fork();
+    pid_t pid = Fork();
     if(pid == 0) {
         char** argv;
         int argc = nargs + 1;
-        argv = (char**)malloc(argc + 1);
+        argv = (char**) Malloc(argc + 1);
         for(int i = 0; i < argc; i++) {
-            argv[i] = (char*)malloc(ARG_LEN);
+            argv[i] = (char*) Malloc(ARG_LEN);
         }
         argv[argc] = NULL;
         strcpy(argv[0], SERVER_PATH);
@@ -69,24 +67,22 @@ void run_server(char** args, int nargs) {
             assert(args[i - 1] != NULL);
             strcpy(argv[i], args[i - 1]);
         }
-        close(STDOUT);
         execv(SERVER_PATH, argv);
-    } else if(pid > 0) {
-        server_pid = pid;
     } else {
-        perror("fork");
+        server_pid = pid;
     }
 }
 
 void test_status(void) {
     output_t* output;
     char** arg;
-    arg = (char**)malloc(sizeof(char**));
-    *arg = (char*)malloc(ARG_LEN);
+    arg = (char**) Malloc(sizeof(char**));
+    *arg = (char*) Malloc(ARG_LEN);
     snprintf(*arg, ARG_LEN, "%s", "status");
     output = run(IUCTL_PATH, arg, 1);
     assert(output != NULL);
     assert(output->retstat == 0);
+    assert(output->nbytes > 0);
     free(*arg);
     free(arg);
     free(output);
@@ -107,12 +103,12 @@ int main() {
     snprintf(args[0], ARG_LEN, "%d", 1);
     snprintf(args[1], ARG_LEN, "%d", 1);
     run_server(args, 2);
-    // Wait for server to start (what a great solution!)
-    sleep(1);
     for(int i = 0; i < SERV_ARGS; i++) {
         free(args[i]);
     }
     free(args);
+    // Wait for server to start (what a great solution!)
+    sleep(1);
     test_status();
     assert(server_pid > 0);
     kill(server_pid, SIGTERM);

@@ -50,11 +50,7 @@ void init_iuctl() {
     init_iuctl(true);
 }
 int join_iuctl() {
-    int fd = open(QUEUE_PATH, O_RDONLY);
-    if(fd < 0) {
-        perror("open");
-        return -1;
-    }
+    int fd = Open(QUEUE_PATH, O_RDONLY);
     char server_pid_str[32];
     read(fd, server_pid_str, sizeof(server_pid_str));
     server_pid = atoi(server_pid_str);
