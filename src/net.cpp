@@ -34,7 +34,7 @@ using std::vector;
 extern void believeDead(nid_t node);
 
 int Socket() {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
     if (fd == -1) {
         perror("socket");
         exit(errno);
@@ -65,10 +65,10 @@ addr_t init_server(port_t port) {
     int fd = Socket();
     addr_t uaddr;
     bzero(&uaddr, sizeof(uaddr));
-    struct sockaddr_in& addr = uaddr.siaddr4;;
-    addr.sin_family = AF_INET;
-    addr.sin_port = port;
-    socklen_t len = sizeof(addr);
+    struct sockaddr_in6& addr = uaddr.siaddr6;;
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = port;
+    socklen_t len = sizeof(uaddr);
     int binded = bind(fd, &uaddr.saddr, len);
     if (binded == -1) {
         perror("bind");

@@ -41,6 +41,7 @@ static void basic_server_test() {
     struct msg* rmsg;
     assert(me() == NID1);
     const addr_t parent_addr = init_server();
+    assert(parent_addr.family == AF_INET6);
     assert(next_msg_now() == NULL);
     pid_t pid = Fork();
     if (!pid) {
@@ -116,7 +117,6 @@ void dead_server_test() {
         shutdown_server();
         exit(0);
     }
-    sched_yield();
     struct msg* hmsg = next_msg();
     assert(hmsg != NULL);
     assert(hmsg->type == HEARTBEAT);
