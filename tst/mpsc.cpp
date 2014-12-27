@@ -57,7 +57,7 @@ void para_test() {
 }
 int main() {
     basic_test();
-    #define NTRIALS 500
+    #define NTRIALS 50000
     for (size_t i = 0; i < NTRIALS; i++) {
         printf("%04X / %04X\b\b\b\b\b\b\b\b\b\b\b", i, NTRIALS);
         para_test();

@@ -7,7 +7,7 @@ using std::atomic;
 template <typename T> struct mpsc {
 private:
     struct node {
-        node* volatile next;
+        atomic<node*> volatile next;
         T data;
     };
     struct node* first;
@@ -25,7 +25,7 @@ public:
         }
     };
     void put(T item) {
-        struct node* const proposal = (node*) Malloc(sizeof(*proposal));
+        register struct node *const proposal = (node*) Malloc(sizeof(*proposal));
         proposal->data = item;
         proposal->next = NULL;
         struct node* const prev = atomic_exchange(&last, proposal);
