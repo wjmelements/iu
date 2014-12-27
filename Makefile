@@ -5,10 +5,13 @@ CCSTD=-std=gnu11
 CXXSTD=-std=gnu++11
 CFLAGS=-O3 -fdiagnostics-color=auto -pthread -g $(CCSTD)
 CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-strings -Wno-pointer-arith
-MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin
+MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin .make/lib
 INCLUDE=$(addprefix -I,include)
 EXECS=$(addprefix bin/,client server iuctl)
 TESTS=$(addprefix tst/bin/,capitalC stream mpsc msg net todo file node messenger iuctl)
+SRC=$(wildcard src/*.cpp)
+LIBS=$(patsubst src/%.cpp, lib/%.o, $(SRC))
+
 
 .PHONY: default all clean again check distcheck dist-check
 .SECONDARY:
@@ -26,6 +29,8 @@ FNM=\([a-z_A-Z/]*\)
 .make/%.d: %.cpp
 	@mkdir -p $(@D)
 	$(CPP) -MM $(CXXSTD) $(INCLUDE) $< -o $@
+.make/lib/%.o.d: .make/src/%.d | .make/lib
+	@sed 's/$(FNM)\.o/lib\/\1.o/g' $< | tee $@
 .make/bin/%.d: .make/%.d | .make/bin
 	@sed 's/include\/$(FNM).h/lib\/\1.o/g' $< > $@
 	@sed -i 's/$(FNM).o:/bin\/\1:/g' $@
@@ -36,7 +41,7 @@ FNM=\([a-z_A-Z/]*\)
 	@sed -i 's/$(FNM).o:/tst\/bin\/\1:/g' $@
 	@perl make/depend.pl $@ > $@.bak
 	@mv $@.bak $@
-MAKES=$(addsuffix .d,$(addprefix .make/, $(EXECS) $(TESTS)))
+MAKES=$(addsuffix .d,$(addprefix .make/, $(EXECS) $(TESTS) $(LIBS)))
 -include $(MAKES)
 distcheck dist-check:
 	@rm -rf .pass
