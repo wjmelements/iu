@@ -51,9 +51,12 @@ static void addPollFd(int fd) {
     pollfds_vector.push_back(pfd);
 }
 static void prunePollFds() {
-    remove_if(pollfds_vector.begin(), pollfds_vector.end(), [](const struct pollfd& pollfd) {
-        return pollfd.fd < 0;
-    });
+    pollfds_vector.erase(
+        remove_if(pollfds_vector.begin(), pollfds_vector.end(), [](const struct pollfd& pollfd) {
+            return pollfd.fd < 0;
+        }),
+        pollfds_vector.end()
+    );
 }
 static size_t start; // for round-robin
 static map<nid_t, addr_t> addresses;
@@ -173,7 +176,16 @@ static struct msg* recv_msg(int fd) {
     }
     // should have been caught by RDHUP
     if (bytes == 0) {
-        nid_t nid = nids[fd];
+        auto nidi = nids.find(fd);
+        if (nidi == nids.end()) {
+            // this shouldn't happen
+            fprintf(stderr, "unexpected fd %i\n", fd);
+            for (auto pollfd : pollfds_vector) {
+                printf("item: %i\n", pollfd.fd);
+            }
+            return NULL;
+        }
+        nid_t nid = nidi->second;
         nids.erase(fd);
         connections.erase(nid);
         //printf("1 %u\n", nid);
@@ -197,23 +209,6 @@ static struct msg* recv_msg(int fd) {
     return ret;
 }
 
-static int accept_connection() {
-    addr_t addr;
-    socklen_t len = sizeof(addr);
-    int fd = Accept(server_fd, &addr.saddr, &len);
-    struct msg* msg = recv_msg(fd);
-    struct identity_msg* id_msg = (struct identity_msg*) msg;
-    nid_t nid = id_msg->sender;
-    free(id_msg);
-    setNodeAddr(nid, &addr);
-    nids.insert(std::pair<int, nid_t>(fd, nid));
-    connections.insert(std::pair<nid_t, int>(nid, fd));
-    stream<struct msg*>* const strm = send_qs[nid] = new stream<struct msg*>(/*listeners*/ 1);
-    send_keys[nid] = strm->listen();
-    addPollFd(fd);
-    return fd;
-}
-
 static struct msg* next_msg_from_fd(int fd) {
     struct pollfd pollfd;
     while (1) {
@@ -227,11 +222,36 @@ static struct msg* next_msg_from_fd(int fd) {
         } else if (pollfd.revents & POLLIN) {
             return recv_msg(fd);
         } else if (pollfd.revents & POLLRDHUP) {
-            believeDead(nids[fd]);
+            auto nidi = nids.find(fd);
+            if (nidi != nids.end()) {
+                believeDead(nidi->second);
+            }
             return NULL;
         }
     }
 }
+
+static void accept_connection() {
+    addr_t addr;
+    socklen_t len = sizeof(addr);
+    int fd = Accept(server_fd, &addr.saddr, &len);
+    struct msg* msg = next_msg_from_fd(fd);
+    if (msg == NULL) {
+        Close(fd);
+        return;
+    }
+    struct identity_msg* id_msg = (struct identity_msg*) msg;
+    nid_t nid = id_msg->sender;
+    free(id_msg);
+    setNodeAddr(nid, &addr);
+    nids.insert(std::pair<int, nid_t>(fd, nid));
+    connections.insert(std::pair<nid_t, int>(nid, fd));
+    stream<struct msg*>* const strm = send_qs[nid] = new stream<struct msg*>(/*listeners*/ 1);
+    send_keys[nid] = strm->listen();
+    addPollFd(fd);
+    return;
+}
+
 struct msg* next_msg_same() {
     return next_msg_from_fd(last_fd);
 }
@@ -363,11 +383,15 @@ struct msg* next_msg_now() {
     if (polld == 0) {
         return NULL;
     }
+    // start can lie outside of the actual range
+    while (start >= pollfds_vector.size()) {
+        start -= pollfds_vector.size();
+    }
     // round robin
     for (size_t offset = 0; offset < pollfds_vector.size(); offset++) {
         size_t i = offset + start + 1;
         i = i >= pollfds_vector.size() ? i - pollfds_vector.size() : i;
-        if (poll_fds[i].revents & POLLIN) {
+        if ((poll_fds[i].revents & POLLIN) || (poll_fds[i].revents & POLLRDHUP)) {
             start = i;
             break;
         }
@@ -383,9 +407,11 @@ struct msg* next_msg_now() {
         // still have to receive last messages
         negate_on_null = true;
     }
-    assert(poll_fds[start].revents & POLLIN);
-    struct msg* ret = recv_msg(fd);
-    if (ret == NULL) {
+    struct msg* ret;
+    if (
+        !(poll_fds[start].revents & POLLIN)
+     || (ret = recv_msg(fd)) == NULL
+    ) {
         if (negate_on_null) {
             // do not care about events on this fd anymore
             poll_fds[start].fd = -fd;

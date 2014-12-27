@@ -341,8 +341,9 @@ template<typename T> void stream<T>::sweep() {
     iter = iter->next;
     while (iter) {
         for (size_t id = 0; id < max_ports; ++id) {
-            if (listeners[id]) {
-                if (*listeners[id] == iter) {
+            node<T>*volatile *const listener = listeners[id];
+            if (listener) {
+                if (*listener == iter) {
                     return;
                 }
             }
