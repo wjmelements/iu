@@ -27,9 +27,9 @@ public:
     void put(T item) {
         register struct node *const proposal = (node*) Malloc(sizeof(*proposal));
         proposal->data = item;
-        proposal->next = NULL;
-        struct node* const prev = atomic_exchange(&last, proposal);
-        prev->next = proposal;
+        proposal->next.store(NULL);
+        struct node* const prev = last.exchange(proposal);
+        prev->next.store(proposal);
     };
     const T* get() {
         if (!first->next) {
