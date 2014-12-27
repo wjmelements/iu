@@ -100,18 +100,63 @@ static void basic_server_test() {
 }
 
 void dead_server_test() {
-    init_server();
-    /* TODO
+    const addr_t parent_addr = init_server();
     pid_t pid = Fork();
     if (!pid) {
         shutdown_server();
+        ME = NID2;
         init_server();
-        Kill(SIGKILL
-    } else {
-        
+        setNodeAddr(NID1, &parent_addr);
+        heartbeat_msg hmsg;
+        bool success = send_msg(&hmsg, NID1);
+        assert(success);
+        sched_yield();
+        success = send_msg(&hmsg, NID1);
+        assert(success);
+        shutdown_server();
+        exit(0);
     }
-    */
+    sched_yield();
+    struct msg* hmsg = next_msg();
+    assert(hmsg != NULL);
+    assert(hmsg->type == HEARTBEAT);
+    assert(msg_source() == NID2);
+
+    Kill(pid, SIGKILL);
+    int status;
+    assert(Wait(&status) == pid);
+
+    assert(dead.size() == 0);
+
+    hmsg = next_msg_now();
+    if (hmsg == NULL) {
+        // they were killed before they could send it
+        assert(WIFSIGNALED(status));
+        assert(WTERMSIG(status) == SIGKILL);
+        // we should have believed them dead
+        assert(dead.size() == 1);
+        assert(dead.count(NID2) == 1);
+    } else {
+        // then we have received their message
+        assert(hmsg->type == HEARTBEAT);
+        assert(msg_source() == NID2);
+        // they either exited safely or were killed before they could
+        assert(WIFEXITED(status) || WIFSIGNALED(status));
+        if (WIFEXITED(status)) {
+            assert(WEXITSTATUS(status) == 0);
+        }
+        if (WIFSIGNALED(status)) {
+            assert(WTERMSIG(status) == SIGKILL);
+        }
+        // they have not yet died according to wnet
+        assert(dead.size() == 0);
+    }
+    assert(next_msg_now() == NULL);
     shutdown_server();
+    // should be dead to us now
+    assert(dead.size() == 1);
+    assert(dead.count(NID2) == 1);
+    dead.clear();
 }
 
 void iterative_test() {
@@ -265,7 +310,7 @@ int main() {
     for (size_t i = 0; i < 5; i++) {
         basic_server_test();
     }
-    for (size_t i = 0; i < 5; i++) {
+    for (size_t i = 0; i < 500; i++) {
         dead_server_test();
     }
     for (size_t i = 0; i < 5; i++) {
