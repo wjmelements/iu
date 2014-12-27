@@ -125,7 +125,6 @@ void net_suspend(nid_t nid) {
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
         if (it->fd == fd) {
             it->fd = -fd;
-            pollfds_vector.erase(it);
             return;
         }
     };
