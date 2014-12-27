@@ -67,7 +67,6 @@ int join_iuctl() {
     readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
     self_pid = atoi(self_pid_str);
     assert(self_pid > 0);
-    printf("%d\n", self_pid);
     init_iuctl(false);
     return 0;
 }
