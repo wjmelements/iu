@@ -38,9 +38,9 @@ static void init_iuctl(bool creat) {
     msg_q = msgget(key, flags);
 }
 void init_iuctl() {
-    int fd = open(QUEUE_PATH, O_WRONLY | O_CREAT | O_TRUNC);
+    int fd = open(QUEUE_PATH, O_WRONLY | O_CREAT | O_TRUNC, UMASK);
     if(fd < 0) {
-        perror("init_iuctl: open");
+        perror(QUEUE_PATH);
     }
     char self_pid_str[32];
     readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
