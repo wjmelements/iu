@@ -91,8 +91,10 @@ addr_t init_server(port_t port) {
 }
 
 void setNodeAddr(nid_t nid, const addr_t* addr) {
-    // TODO emplace
-    addresses[nid] = *addr;
+    auto pair = addresses.emplace(nid, *addr);
+    if (!pair.second) {
+        pair.first->second = *addr;
+    }
 }
 // used primarily for unit testing
 const addr_t& getNodeAddr(nid_t nid) {
