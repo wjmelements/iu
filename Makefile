@@ -30,7 +30,7 @@ FNM=\([a-z_A-Z/]*\)
 	@mkdir -p $(@D)
 	$(CPP) -MM $(CXXSTD) $(INCLUDE) $< -o $@
 .make/lib/%.o.d: .make/src/%.d | .make/lib
-	@sed 's/$(FNM)\.o/lib\/\1.o/g' $< | tee $@
+	@sed 's/$(FNM)\.o/lib\/\1.o/g' $< > $@
 .make/bin/%.d: .make/%.d | .make/bin
 	@sed 's/include\/$(FNM).h/lib\/\1.o/g' $< > $@
 	@sed -i 's/$(FNM).o:/bin\/\1:/g' $@
