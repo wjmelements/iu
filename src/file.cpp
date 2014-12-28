@@ -41,6 +41,7 @@ void* send_file_thread(void* arg) {
     out->put(last);
     close:
     out->close();
+    // FIXME when can I delete out?
     Close(fd);
     return NULL;
 }

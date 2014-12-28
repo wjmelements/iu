@@ -121,6 +121,7 @@ void dead_server_test() {
     assert(hmsg != NULL);
     assert(hmsg->type == HEARTBEAT);
     assert(msg_source() == NID2);
+    free(hmsg);
 
     Kill(pid, SIGKILL);
     int status;
@@ -139,6 +140,7 @@ void dead_server_test() {
     } else {
         // then we have received their message
         assert(hmsg->type == HEARTBEAT);
+        free(hmsg);
         assert(msg_source() == NID2);
         // they either exited safely or were killed before they could
         assert(WIFEXITED(status) || WIFSIGNALED(status));

@@ -391,7 +391,9 @@ static void send_readies() noexcept {
         if (it == keys.end()) {
             it = keys.begin();
         }
-        send_msg_now(from(it->second), it->first);
+        struct msg* to_send = from(it->second);
+        send_msg_now(to_send, it->first);
+        free(to_send);
         if (!ready(it->second)) {
             it = keys.erase(it);
         } else {
