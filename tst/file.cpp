@@ -35,6 +35,8 @@ int main() {
     test_size(3000);
     test_size(10000);
     test_size(100000);
+    test_size(1000000);
+    test_size(10000000);
 
     shutdown_server();
     return 0;
@@ -51,7 +53,7 @@ void test_size(size_t size) {
     char *buffr2 = (char*) Malloc(size);
 
     int urand_fd = Open("/dev/urandom", O_RDONLY);
-    Read(urand_fd, buffer, sizeof(buffer));
+    Read(urand_fd, buffer, size);
     Close(urand_fd);
 
     int fake_file = Open("/tmp", O_RDWR | O_EXCL | O_TMPFILE);
