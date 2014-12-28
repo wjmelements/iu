@@ -6,7 +6,11 @@
 // each message has a sequence number unique in a sender/receiver relation
 static map<nid_t, seq_t> sequence_numbers; 
 static void save_item(item_t& item) {
-    // TODO
+    // make a file permanent
+    // assumptions: item.type == ITEM_FILE and item.saved == false
+    
+    item.path = save_file(item.fd);
+    item.saved = true;
 }
 static map<nid_t, map<seq_t, item_t> > sent, received;
 static map<nid_t, list<item_t> > messages;

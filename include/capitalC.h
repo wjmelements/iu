@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
 /*
@@ -29,11 +30,14 @@ FILE* Fopen(const char* path, const char* mode);
 pid_t Fork(void);
 void Free(void*)
 void Fstat(int fd, struct stat info);
+void Gettimeofday(struct timeval* tv);
 void Kill(pid_t pid, int sig);
+void Linkat(int olddirfd, const char* oldpath, int newdirfd, const char* newpath, int flags);
 void Listen(int sockfd, int backlog);
 void Lseek(int fd, off_t offset, int whence);
 void* Malloc(size_t size);
 int Open(const char* path, int flags);
+int Open(const char* path, int flags, mode_t mode);
 void Pipe(int fd[2]);
 int Poll(struct pollfd*, nfds_t nfds, int timeout);
 void Pthread_create(pthread_t* thread, pthread_attr_t* attr, void*(*func)(void*), void* arg);
@@ -47,6 +51,7 @@ void Read(int fd, void* buf, size_t count);
 void Send(int sockfd, const void* buf, size_t len, int flags);
 void Snprintf(char* str, size_t size, const char* format, ...);
 int Socket(int domain, int type, int protocol);
+void Unlink(const char* path);
 void Wait(int* status);
 void Write(int fd, const void* buf, size_t count);
 */
@@ -159,6 +164,13 @@ static inline int Open(const char* path, int flags) {
     }
     return ret;
 }
+static inline int Open(const char* path, int flags, mode_t mode) {
+    int ret = open(path, flags, mode);
+    if (ret == -1) {
+        DIEWITH(path);
+    }
+    return ret;
+}
 static inline FILE* Fopen(const char* path, const char* mode) {
     FILE* ret = fopen(path, mode);
     if (ret == NULL) {
@@ -170,6 +182,18 @@ static inline void Fstat(int fd, struct stat* info) {
     int success = fstat(fd, info);
     if (success == -1) {
         DIE();
+    }
+}
+static inline void Linkat(int olddirfd, const char* oldpath, int newdirfd, const char* newpath, int flags) {
+    int status = linkat(olddirfd, oldpath, newdirfd, newpath, flags);
+    if (status) {
+        DIE();
+    }
+}
+static inline void Unlink(const char* path) {
+    int ret = unlink(path);
+    if (ret == -1) {
+        DIEWITH(path);
     }
 }
 #define Free free
@@ -275,6 +299,12 @@ static inline void Send(int sockfd, const void* buf, size_t len, int flags) {
         } else {
             return;
         }
+    }
+}
+static inline void Gettimeofday(struct timeval* tv) {
+    int status = gettimeofday(tv, NULL);
+    if (status == -1) {
+        DIE();
     }
 }
 /*

@@ -2,6 +2,8 @@
 
 #define CHUNK_SIZE 1024
 
+#define TEMPDIR "/tmp"
+
 struct param {
     int fd;
     stream<msg*>* out;
@@ -71,7 +73,7 @@ void* recv_file_deputy(void* darg) {
     void* arg = rarg->arg;
     free(rarg);
 
-    int fd = Open("/tmp", O_RDWR | O_EXCL | O_TMPFILE);
+    int fd = Open(TEMPDIR, O_RDWR | O_TMPFILE, 0644);
     struct msg* header = next_msg_from(source);
     const struct file_header* fheader = (struct file_header*) header;
     size_t num_chunks = fheader->num_chunks;
@@ -104,4 +106,26 @@ void recv_file(func_t callback, void* arg) {
     pthread_t child;
     Pthread_create(&child, NULL, recv_file_deputy, rarg);
     Pthread_detach(child);
+}
+char* save_file(int fd) {
+    // the current path of the tmpfile is /proc/self/fd/{item.fd}
+    char* oldpath = (char*) Malloc(PATH_MAX);
+    Snprintf(oldpath, PATH_MAX, "/proc/self/fd/%d", fd);
+    // the new path should be unique
+    char* newpath = (char*) Malloc(PATH_MAX);
+    union {
+        struct timeval tv;
+        uint64_t numeric;
+    };
+    Gettimeofday(&tv);
+    Snprintf(newpath, PATH_MAX, TEMPDIR "/iu-%lu-%d", numeric, fd);
+    Linkat(
+        AT_FDCWD,
+        oldpath, 
+        AT_FDCWD,
+        newpath,
+        AT_SYMLINK_FOLLOW
+    );
+    free(oldpath);
+    return newpath;
 }

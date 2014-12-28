@@ -101,13 +101,23 @@ void test_size(size_t size) {
     }
     assert(recvd != -1);
     Read(recvd, buffr2, size);
+
+    char* path = save_file(recvd);
     Close(recvd);
+    int saved = Open(path, O_RDONLY);
+    Unlink(path);
+    free(path);
+    char* buffr3 = (char*) Malloc(size);
+    Read(saved, buffr3, size);
+    Close(saved);
 
     struct heartbeat_msg ack;
     bool success = send_msg(&ack, NID2);
     assert(success);
 
     assert(memcmp(buffer, buffr2, size) == 0);
+    assert(memcmp(buffer, buffr3, size) == 0);
+    Free(buffr3);
     Free(buffer);
     Free(buffr2);
 

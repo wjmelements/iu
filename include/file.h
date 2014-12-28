@@ -8,3 +8,5 @@ struct ffarg_t {
 };
 
 void recv_file(func_t callback, void* arg);
+// returns the path; must be freed
+char* save_file(int fd);

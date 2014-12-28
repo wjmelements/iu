@@ -248,8 +248,18 @@ static void accept_connection() {
     setNodeAddr(nid, &addr);
     nids.insert(std::pair<int, nid_t>(fd, nid));
     connections.insert(std::pair<nid_t, int>(nid, fd));
-    stream<struct msg*>* const strm = send_qs[nid] = new stream<struct msg*>(/*listeners*/ 1);
-    send_keys[nid] = strm->listen();
+    stream<struct msg*>* const strm = new stream<struct msg*>(/*listeners*/ 1);
+    auto spair = send_qs.emplace(nid, strm);
+    if (!spair.second) {
+        delete spair.first->second;
+        spair.first->second = strm;
+    }
+    key<struct msg*>* const key = strm->listen();
+    auto kpair = send_keys.emplace(nid, key);
+    if (!kpair.second) {
+        free(kpair.first->second);
+        kpair.first->second = key;
+    }
     addPollFd(fd);
     return;
 }
