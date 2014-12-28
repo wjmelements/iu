@@ -117,8 +117,8 @@ void messenger_destroy() {
                 if (item->saved) {
                     // do not care if this fails
                     unlink(item->path);
+                    free(item->path);
                 }
-                free(item->path);
             }
         }
     }
