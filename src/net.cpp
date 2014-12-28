@@ -363,13 +363,29 @@ stream<msg*>* send_stream(nid_t nid) {
     return ret;
 }
 
-static void send_readies() {
-    // TODO round-robin this
+static void send_readies() noexcept {
+    // send all of the ready messages
+
+    // we do this round-robin for load balancing reasons
+
+    // another potential optimization would be limiting the number of messages
+    // that we send here
+    list<pair<nid_t, key<msg*>*> > keys;
     for (auto pair : send_keys) {
-        while (ready(pair.second)) {
-            msg* next = from(pair.second);
-            send_msg_now(next, pair.first);
-            free(next);
+        if (ready(pair.second)) {
+            keys.push_back(pair);
+        }
+    }
+    auto it = keys.begin();
+    while (keys.size()) {
+        if (it == keys.end()) {
+            it = keys.begin();
+        }
+        send_msg_now(from(it->second), it->first);
+        if (!ready(it->second)) {
+            it = keys.erase(it);
+        } else {
+            it++;
         }
     }
 }
