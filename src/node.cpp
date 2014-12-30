@@ -10,6 +10,7 @@ datacenter getLocation() {
 void init_node(nid_t nid, datacenter loc) {
     _me = nid;
     _loc = loc;
+    setNodeLocation(nid, loc);
     init_server();
 }
 static void handle_address_msg(const addr_msg* amsg) {
