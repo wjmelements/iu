@@ -8,7 +8,7 @@
 #define ARG_LEN 0xFF
 
 #define IUCTL_PATH "bin/iuctl"
-#define SERVER_PATH "bin/server"
+#define SERVER_PATH "bin/iuserver"
 
 #define STDIN 0
 #define STDOUT 1

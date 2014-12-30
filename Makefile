@@ -7,7 +7,7 @@ CFLAGS=-O3 -fdiagnostics-color=auto -pthread -g $(CCSTD)
 CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-strings -Wno-pointer-arith
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin .make/lib
 INCLUDE=$(addprefix -I,include)
-EXECS=$(addprefix bin/,client server iuctl)
+EXECS=$(addprefix bin/,iuclient iuserver iuctl)
 TESTS=$(addprefix tst/bin/,capitalC stream mpsc msg net todo file node messenger iuctl)
 SRC=$(wildcard src/*.cpp)
 LIBS=$(patsubst src/%.cpp, lib/%.o, $(SRC))
@@ -54,7 +54,6 @@ distcheck dist-check:
 $(MKDIRS):
 	@mkdir -p $@
 $(EXECS): | bin
-bin/server: lib/iuctl.o
 bin/%: %.cpp
 	$(CPP) $(CXXFLAGS) $(INCLUDE) $^ -o $@
 bin/%: %.c
