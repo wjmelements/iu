@@ -4,13 +4,13 @@ that guarantees eventual delivery.
 IU is a Korean singer and songwriter.
 
 Binaries:
-- *iuclient*: the extendable messaging client
-- *iuserver*: the service executable
-- *iuctl*: the service controller
+- **iuclient**: the extendable messaging client
+- **iuserver**: the service executable
+- **iuctl**: the service controller
 
 This project is written in C-dominant C++ and:
-- extends [*wnet*](https://github.com/wjmelements/wnet)
-- uses [*capitalC*](https://github.com/wjmelements/capitalC)
-- uses [*libscion*](https://bitbucket.org/wjmelements/libscion)
-- builds with [*Makefile*](https://github.com/wjmelements/Makefile)
+- extends [**wnet**](https://github.com/wjmelements/wnet)
+- uses [**capitalC**](https://github.com/wjmelements/capitalC)
+- uses [**libscion**](https://bitbucket.org/wjmelements/libscion)
+- builds with [**Makefile**](https://github.com/wjmelements/Makefile)
 iu has contributed back to these projects.
