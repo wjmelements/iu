@@ -1,3 +1,5 @@
+#ifndef IUCTL_H
+#define IUCTL_H
 #include "capitalC.h"
 #include <sys/types.h>
 
@@ -21,18 +23,14 @@ void init_iuctl();
 int join_iuctl();
 void destroy_iuctl();
 
+void init_iuctl_msg(iuctl_msg_t* msg);
 // called by only iuctl
 void status_iuctl();
 void shutdown_iuctl();
-
-// called by only service
-void handle_iuctls();
 
 /* Size should be the size of the entire message
  * struct, including the leading long */
 void send_iuctl(void* msg, size_t size);
 int recv_iuctl(int mtype, void* buf, size_t size);
 
-/* Message specific handlers */
-void iuctl_server_status(pid_t iuctl_pid);
-void iuctl_server_shutdown(pid_t iuctl_pid);
+#endif

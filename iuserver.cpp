@@ -1,6 +1,7 @@
 #include "server.h"
 #include "node.h"
 #include "iuctl.h"
+#include "iuctl_server.h"
 
 #include <errno.h>
 #include <stdlib.h>

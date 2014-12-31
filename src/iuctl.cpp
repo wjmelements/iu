@@ -18,8 +18,9 @@
 #define QUEUE_PATH "./.iuctl_q"
 
 static int msg_q;
-static pid_t self_pid;
-static pid_t server_pid;
+pid_t self_pid;
+pid_t server_pid;
+
 static void init_iuctl(bool creat) {
     if(creat) {
         int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR);
@@ -74,33 +75,6 @@ void init_iuctl_msg(iuctl_msg_t* msg) {
     bzero(msg, sizeof(*msg));
     msg->mtext.pid = self_pid;
     msg->mtype = server_pid;
-}
-void handle_iuctls() {
-    iuctl_msg_t msg;
-    if(recv_iuctl(self_pid, &msg, sizeof(msg)) == 0) {
-        pid_t iuctl_pid = msg.mtext.pid;
-        switch(msg.mtext.ctype) {
-            case STATUSREQ:
-                iuctl_server_status(iuctl_pid);
-                break;
-            case SHUTDOWNREQ:
-                iuctl_server_shutdown(iuctl_pid);
-            default:
-                fprintf(stderr, "Received invalid message\n");
-                break;
-        }
-    }
-    return;
-}
-void iuctl_server_status(pid_t iuctl_pid) {
-    iuctl_msg_t msg;
-    init_iuctl_msg(&msg);
-    msg.mtype = iuctl_pid;
-    send_iuctl(&msg, sizeof(msg));
-}
-void iuctl_server_shutdown(pid_t iuctl_pid) {
-    destroy_iuctl();
-    exit(0);
 }
 /* TODO */
 void status_iuctl() {
