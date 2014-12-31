@@ -165,7 +165,7 @@ template<typename T> T stream<T>::get(size_t id) {
                 break;
             }
         } else {
-            sleep(0);
+            sched_yield();
             next = *listener;
         }
     }

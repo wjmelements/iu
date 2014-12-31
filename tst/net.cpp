@@ -215,7 +215,7 @@ void stream_test() {
     assert(next->type = HEARTBEAT);
     free(next);
 
-    stream<msg*>* in = send_stream(NID2);
+    concat<msg*>* in = send_stream(NID2);
     assert(in != NULL);
     assert(next_msg_now() == NULL);
     struct heartbeat_msg* hmsg = (heartbeat_msg*) Malloc(sizeof(heartbeat_msg));
@@ -229,7 +229,6 @@ void stream_test() {
     free(next);
     assert(next_msg_now() == NULL);
 
-    delete in;
     shutdown_server();
 
     int status;
@@ -248,9 +247,9 @@ void two_stream_test() {
 
         assert(next_msg_now() == NULL);
 
-        stream<msg*>* in1 = send_stream(NID1);
-        stream<msg*>* in2 = send_stream(NID1);
+        concat<msg*>* in1 = send_stream(NID1);
         assert(in1 != NULL);
+        concat<msg*>* in2 = send_stream(NID1);
         assert(in2 != NULL);
         assert(next_msg_now() == NULL);
 
@@ -270,7 +269,8 @@ void two_stream_test() {
         net_idle();
         in2->close();
         net_idle();
-        delete in1, in2;
+
+        shutdown_server();
         exit(0);
     }
     struct msg* next = next_msg();

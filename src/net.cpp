@@ -107,8 +107,7 @@ const addr_t& getNodeAddr(nid_t nid) {
 
 static map<int, nid_t> nids;
 static map<nid_t, int> connections;
-static map<nid_t, stream<msg*>* > send_qs;
-static map<nid_t, key<msg*>* > send_keys;
+static map<nid_t, concat<msg*>* > send_qs;
 
 struct pollfd* getPollfds() {
     for (auto it = pollfds_vector.begin(); it != pollfds_vector.end(); it++) {
@@ -152,10 +151,6 @@ void shutdown_server() {
         delete pair.second;
     }
     send_qs.clear();
-    for (auto pair : send_keys) {
-        free(pair.second);
-    }
-    send_keys.clear();
     Close(server_fd);
 }
 
@@ -247,18 +242,13 @@ static void accept_connection() {
     free(id_msg);
     setNodeAddr(nid, &addr);
     nids.insert(std::pair<int, nid_t>(fd, nid));
+
     connections.insert(std::pair<nid_t, int>(nid, fd));
-    stream<struct msg*>* const strm = new stream<struct msg*>(/*listeners*/ 1);
+    concat<struct msg*>* const strm = new concat<struct msg*>();
     auto spair = send_qs.emplace(nid, strm);
     if (!spair.second) {
         delete spair.first->second;
         spair.first->second = strm;
-    }
-    key<struct msg*>* const key = strm->listen();
-    auto kpair = send_keys.emplace(nid, key);
-    if (!kpair.second) {
-        free(kpair.first->second);
-        kpair.first->second = key;
     }
     addPollFd(fd);
     return;
@@ -293,8 +283,14 @@ static int connect_to(nid_t nid) {
     }
     nids.insert(pair<int, nid_t>(fd, nid));
     connections.insert(pair<nid_t, int>(nid, fd));
-    stream<msg*>* const strm = send_qs[nid] = new stream<msg*>(/*listeners*/ 1);
-    send_keys[nid] = strm->listen();
+
+    concat<msg*>* const strm = new concat<msg*>();
+    auto spair = send_qs.emplace(nid, strm);
+    if (!spair.second) {
+        delete spair.first->second;
+        spair.first->second = strm;
+    }
+
     addPollFd(fd);
 
     identity_msg idm;
@@ -347,7 +343,7 @@ bool send_msg(const struct msg* msg, nid_t nid) {
         }
         send_q = send_qs.find(nid);
     }
-    if (empty(send_keys[nid])) {
+    if (send_qs[nid]->empty()) {
         // can send now
         return send_msg_now(msg, nid);
     }
@@ -357,7 +353,7 @@ bool send_msg(const struct msg* msg, nid_t nid) {
     send_q->second->put(copy);
     return true;
 }
-stream<msg*>* send_stream(nid_t nid) {
+concat<msg*>* send_stream(nid_t nid) {
     auto send_q = send_qs.find(nid);
     if (send_q == send_qs.end()) {
         int fd = connect_to(nid);
@@ -366,10 +362,8 @@ stream<msg*>* send_stream(nid_t nid) {
         }
         send_q = send_qs.find(nid);
     }
-    stream<msg*>* ret = new stream<msg*>(/*listeners*/ 1);
-    key<msg*>* key = ret->listen();
-    send_q->second->give(key);
-    free(key);
+    concat<msg*>* ret = new concat<msg*>();
+    send_q->second->give(ret);
     return ret;
 }
 
@@ -380,9 +374,9 @@ static void send_readies() noexcept {
 
     // another potential optimization would be limiting the number of messages
     // that we send here
-    list<pair<nid_t, key<msg*>*> > keys;
-    for (auto pair : send_keys) {
-        if (ready(pair.second)) {
+    list<pair<nid_t, concat<msg*>*> > keys;
+    for (auto pair : send_qs) {
+        if (pair.second->ready()) {
             keys.push_back(pair);
         }
     }
@@ -391,10 +385,10 @@ static void send_readies() noexcept {
         if (it == keys.end()) {
             it = keys.begin();
         }
-        struct msg* to_send = from(it->second);
+        struct msg* to_send = it->second->get();
         send_msg_now(to_send, it->first);
         free(to_send);
-        if (!ready(it->second)) {
+        if (!it->second->ready()) {
             it = keys.erase(it);
         } else {
             it++;

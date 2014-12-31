@@ -3,7 +3,7 @@
 
 #include "capitalC.h"
 #include "msg.h"
-#include "stream.h"
+#include "concat.h"
 #include "types.h"
 
 addr_t init_server(port_t port = 0);
@@ -11,7 +11,7 @@ void setNodeAddr(nid_t nid, const addr_t* addr);
 
 // receive stream in which to add messages and then close
 // added messages are freed in src/net.cpp
-stream<msg*>* send_stream(nid_t nid);
+concat<msg*>* send_stream(nid_t nid);
 
 // does not free msg
 bool send_msg(const struct msg* msg, nid_t nid);

@@ -6,15 +6,15 @@
 
 struct param {
     int fd;
-    stream<msg*>* out;
-    param(int _fd, stream<msg*>* _out):
+    concat<msg*>* out;
+    param(int _fd, concat<msg*>* _out):
         fd(_fd), out(_out)
     { };
 };
 void* send_file_thread(void* arg) {
     struct param* param = (struct param*) arg;
     int fd = param->fd;
-    stream<msg*>* out = param->out;
+    concat<msg*>* out = param->out;
     delete param;
     struct stat info;
     Fstat(fd, &info);
@@ -40,13 +40,12 @@ void* send_file_thread(void* arg) {
     last = new_file_chunk(remainder, fd);
     out->put(last);
     close:
-    out->close();
-    // FIXME when can I delete out?
     Close(fd);
+    out->close();
     return NULL;
 }
 void send_file(int fd, nid_t dest) {
-    stream<msg*>* out = send_stream(dest);
+    concat<msg*>* out = send_stream(dest);
     struct param* arg = new param(Dup(fd), out);
     pthread_t thread;
     Pthread_create(&thread, NULL, send_file_thread, arg);
