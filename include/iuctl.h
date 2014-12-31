@@ -5,6 +5,7 @@ enum ctl_t {
     LEARN_PORT,
     STATUSREQ,
     STATUS,
+    SHUTDOWNREQ,
 };
 
 typedef struct iuctl_msg {
@@ -22,6 +23,7 @@ void destroy_iuctl();
 
 // called by only iuctl
 void status_iuctl();
+void shutdown_iuctl();
 
 // called by only service
 void handle_iuctls();
@@ -33,3 +35,4 @@ int recv_iuctl(int mtype, void* buf, size_t size);
 
 /* Message specific handlers */
 void iuctl_server_status(pid_t iuctl_pid);
+void iuctl_server_shutdown(pid_t iuctl_pid);

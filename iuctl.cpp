@@ -11,6 +11,7 @@
 
 #define HELP "help"
 #define STATUS "status"
+#define SHUTDOWN "shutdown"
 
 
 const char* help = "\
@@ -19,6 +20,8 @@ iuctl [command] [params...]\n\
         print this message\n\
     " STATUS "\n\
         print status\
+    " SHUTDOWN "\n\
+        shutdown iu server\
 ";
 void print_help(void) {
     puts(help);
@@ -43,6 +46,8 @@ int main(int argc, char* argv[]) {
         print_help();
     } else if (IS(1, STATUS)){
         print_status();
+    } else if (IS(1, SHUTDOWN)) {
+        shutdown_iuctl();
     } else {
         print_help();
     }

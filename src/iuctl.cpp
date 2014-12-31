@@ -83,6 +83,8 @@ void handle_iuctls() {
             case STATUSREQ:
                 iuctl_server_status(iuctl_pid);
                 break;
+            case SHUTDOWNREQ:
+                iuctl_server_shutdown(iuctl_pid);
             default:
                 fprintf(stderr, "Received invalid message\n");
                 break;
@@ -96,6 +98,10 @@ void iuctl_server_status(pid_t iuctl_pid) {
     msg.mtype = iuctl_pid;
     send_iuctl(&msg, sizeof(msg));
 }
+void iuctl_server_shutdown(pid_t iuctl_pid) {
+    destroy_iuctl();
+    exit(0);
+}
 /* TODO */
 void status_iuctl() {
     iuctl_msg_t msg;
@@ -104,6 +110,12 @@ void status_iuctl() {
     send_iuctl(&msg, sizeof(msg));
     while(recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
     printf("STATUS: GOOD\n");
+}
+void shutdown_iuctl() {
+    iuctl_msg_t msg;
+    init_iuctl_msg(&msg);
+    msg.mtext.ctype = SHUTDOWNREQ;
+    send_iuctl(&msg, sizeof(msg));
 }
 void send_iuctl(void* msg, size_t size) {
     assert(size - sizeof(long) > 0);
