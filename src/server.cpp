@@ -10,6 +10,9 @@ void believeDead(nid_t nid) {
 }
 void server_handle_msg(const msg* curr) {
     switch (curr->type) {
+        case ITEM:
+            handle_item_relay((const item_msg*) curr);
+            break;
         default:
             handle_msg(curr);
             break;

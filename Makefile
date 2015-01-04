@@ -8,7 +8,7 @@ CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-
 MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin .make/lib
 INCLUDE=$(addprefix -I,include)
 EXECS=$(addprefix bin/,iuclient iuserver iuctl)
-TESTS=$(addprefix tst/bin/,capitalC concat stream mpsc msg datacenters net todo file node messenger iuctl)
+TESTS=$(addprefix tst/bin/,capitalC concat stream mpsc msg datacenters net todo file node messenger relay iuctl)
 SRC=$(wildcard src/*.cpp)
 LIBS=$(patsubst src/%.cpp, lib/%.o, $(SRC))
 

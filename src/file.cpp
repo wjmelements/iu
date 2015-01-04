@@ -44,12 +44,15 @@ void* send_file_thread(void* arg) {
     out->close();
     return NULL;
 }
-void send_file(int fd, nid_t dest) {
-    concat<msg*>* out = send_stream(dest);
+void send_file(int fd, concat<msg*>* out) {
     struct param* arg = new param(Dup(fd), out);
     pthread_t thread;
     Pthread_create(&thread, NULL, send_file_thread, arg);
     Pthread_detach(thread);
+}
+void send_file(int fd, nid_t dest) {
+    concat<msg*>* out = send_stream(dest);
+    send_file(fd, out);
 }
 struct finisher_arg {
     nid_t source;

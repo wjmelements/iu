@@ -27,5 +27,7 @@ int main() {
     assert(getNodesIn(US_WEST).size() == 0);
     assert(getNodesIn(US_EAST).count(nid1) == 1);
 
+    assert(getServer() == nid1);
+
     return 0;
 }

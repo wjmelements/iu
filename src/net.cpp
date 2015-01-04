@@ -96,6 +96,9 @@ void setNodeAddr(nid_t nid, const addr_t* addr) {
         pair.first->second = *addr;
     }
 }
+bool haveNodeAddr(nid_t nid) {
+    return addresses.count(nid);
+}
 // used primarily for unit testing
 const addr_t& getNodeAddr(nid_t nid) {
     auto it = addresses.find(nid);
@@ -178,7 +181,7 @@ static struct msg* recv_msg(int fd) {
             // this shouldn't happen
             fprintf(stderr, "unexpected fd %i\n", fd);
             for (auto pollfd : pollfds_vector) {
-                printf("item: %i\n", pollfd.fd);
+                printf("poll item: %i\n", pollfd.fd);
             }
             return NULL;
         }

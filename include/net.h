@@ -8,6 +8,7 @@
 
 addr_t init_server(port_t port = 0);
 void setNodeAddr(nid_t nid, const addr_t* addr); 
+bool haveNodeAddr(nid_t nid);
 
 // receive stream in which to add messages and then close
 // added messages are freed in src/net.cpp
@@ -38,5 +39,8 @@ void net_resume(nid_t nid);
 
 // orderly shutdown
 void shutdown_server();
+
+// get a server
+nid_t getServer();
 
 #endif

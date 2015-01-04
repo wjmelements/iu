@@ -17,3 +17,13 @@ void setNodeLocation(nid_t nid, datacenter loc) {
 datacenter getNodeLocation(nid_t nid) {
     return nodes[nid];
 }
+// TODO optimize getServer for current (possibly client) location
+nid_t getServer() {
+    // FIXME do not loop in a stupid order like this
+    for (auto pair : datacenters) {
+        if (pair.second.size()) {
+            return *pair.second.cbegin();
+        }
+    }
+    return -1;
+}

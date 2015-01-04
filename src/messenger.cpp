@@ -43,9 +43,15 @@ void messenger_file(const char* path, nid_t dest) {
     messenger_file(fd, dest);
 }
 void messenger_file(int fd, nid_t dest) {
-    // TODO relay through server on failure
     item_msg item_file(ITEM_FILE, dest, sequence_numbers[dest]++);
-    send_msg(&item_file, dest);
+    bool success = send_msg(&item_file, dest);
+    while (!success) {
+        dest = getServer();
+        if (dest == (nid_t) -1) {
+            // what to do
+        }
+        success = send_msg(&item_file, dest);
+    }
     send_file(fd, dest);
     item_t item;
     item.type = ITEM_FILE;
@@ -59,10 +65,16 @@ void messenger_text(const char* text, nid_t dest) {
     messenger_text(str, dest);
 }
 void messenger_text(const string& text, nid_t dest) {
-    // TODO relay through server on failure
     item_msg item_text(ITEM_TEXT, dest, sequence_numbers[dest]++);
     string_msg* str = new_string_msg(text);
-    send_msg(&item_text, dest);
+    bool success = send_msg(&item_text, dest);
+    while (!success) {
+        dest = getServer();
+        if (dest == (nid_t) -1) {
+            // what to do
+        }
+        success = send_msg(&item_text, dest);
+    }
     send_msg(str, dest);
     free(str);
     item_t item;

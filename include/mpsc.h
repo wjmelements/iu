@@ -1,3 +1,6 @@
+#ifndef IUMPSC
+#define IUMPSC
+
 #include "capitalC.h"
 
 #include <atomic>
@@ -42,3 +45,4 @@ public:
         return &first->data;
     };
 };
+#endif
