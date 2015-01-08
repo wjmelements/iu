@@ -19,7 +19,7 @@ iuctl [command] [params...]\n\
     " HELP "\n\
         print this message\n\
     " STATUS "\n\
-        print status\
+        print status\n\
     " SHUTDOWN "\n\
         shutdown iu server\
 ";
