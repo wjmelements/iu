@@ -43,10 +43,10 @@ void init_iuctl() {
     if(fd < 0) {
         perror(QUEUE_PATH);
     }
-    char self_pid_str[32];
-    readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
-    self_pid = atoi(self_pid_str);
+    self_pid = getpid();
     assert(self_pid > 0);
+    char self_pid_str[24];
+    Snprintf(self_pid_str, sizeof(self_pid_str), "%lu", self_pid);
     write(fd, self_pid_str, strlen(self_pid_str));
     init_iuctl(true);
 }
@@ -63,9 +63,7 @@ int join_iuctl() {
         perror("kill");
         return errno;
     }
-    char self_pid_str[32];
-    readlink("/proc/self", self_pid_str, sizeof(self_pid_str));
-    self_pid = atoi(self_pid_str);
+    self_pid = getpid();
     assert(self_pid > 0);
     init_iuctl(false);
     return 0;
