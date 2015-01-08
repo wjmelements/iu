@@ -34,6 +34,11 @@ int main(int argc, char* argv[]) {
         print_help();
         exit(EINVAL);
     }
+    #define IS(index,str) (strcmp(argv[index], str) == 0)
+    if (IS(1, HELP)) {
+        print_help();
+        exit(EXIT_SUCCESS);
+    }
     /* Check if server is running */
     /* TODO */
     //init_iuctl();
@@ -41,10 +46,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Error, is server running?\n");
         return -1;
     }
-    #define IS(index,str) (strcmp(argv[index], str) == 0)
-    if (IS(1, HELP)) {
-        print_help();
-    } else if (IS(1, STATUS)){
+    if (IS(1, STATUS)){
         print_status();
     } else if (IS(1, SHUTDOWN)) {
         shutdown_iuctl();
