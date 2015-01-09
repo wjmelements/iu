@@ -9,6 +9,8 @@
 addr_t init_server(port_t port = 0);
 void setNodeAddr(nid_t nid, const addr_t* addr); 
 bool haveNodeAddr(nid_t nid);
+// return a string for iuctl to print about net addresses
+char* net_addresses(size_t* len, int flags);
 
 // receive stream in which to add messages and then close
 // added messages are freed in src/net.cpp

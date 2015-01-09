@@ -1,5 +1,6 @@
 #include "types.h"
 enum datacenter {
+    UNKNOWN,
     CLIENT,
     US_EAST,
     US_WEST,

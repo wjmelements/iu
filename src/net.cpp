@@ -107,6 +107,29 @@ const addr_t& getNodeAddr(nid_t nid) {
     }
     return it->second;
 }
+char* net_addresses(size_t* len, int flags){
+    // TODO net addresses
+    *len = 50 * addresses.size();
+    char* ret = (char*) Malloc(*len);
+    char* curr = ret;
+    size_t remaining = *len;
+    for (auto pair : addresses) {
+        char addr_buffer[24];
+        inet_ntop(AF_INET6, &pair.second.siaddr6, addr_buffer, sizeof(addr_buffer));
+        size_t step = Snprintf(curr, remaining,
+            "%6lu\t%3lu\t@ %s\n",
+                pair.first, // NID
+                getNodeLocation(pair.first), // RID
+                addr_buffer // ipv6 address
+        );
+        remaining -= step;
+        curr += step;
+    }
+    *len -= remaining;
+    ret[*len] = '\0';
+    *len += 1;
+    return ret;
+}
 
 static map<int, nid_t> nids;
 static map<nid_t, int> connections;

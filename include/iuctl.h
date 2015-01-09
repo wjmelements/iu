@@ -7,16 +7,23 @@ enum ctl_t {
     LEARN_PORT,
     STATUSREQ,
     STATUS,
+    NETREQ,
     SHUTDOWNREQ,
 };
 
 typedef struct iuctl_msg {
     long mtype;
-    struct {
-        pid_t pid;
-        ctl_t ctype;
-        int status;
-    } mtext;
+    union {
+        struct {
+            pid_t pid;
+            ctl_t ctype;
+            union {
+                int status;
+                size_t len;
+            };
+        } mtext;
+        char stext;
+    };
 } iuctl_msg_t;
 
 void init_iuctl();
@@ -27,6 +34,7 @@ void init_iuctl_msg(iuctl_msg_t* msg);
 // called by only iuctl
 void status_iuctl();
 void shutdown_iuctl();
+void net_iuctl();
 
 /* Size should be the size of the entire message
  * struct, including the leading long */

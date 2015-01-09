@@ -10,6 +10,7 @@
 #include <sys/msg.h>
 
 #define HELP "help"
+#define NET "net"
 #define STATUS "status"
 #define SHUTDOWN "shutdown"
 
@@ -18,6 +19,8 @@ const char* help = "\
 iuctl [command] [params...]\n\
     " HELP "\n\
         print this message\n\
+    " NET "\n\
+        print network addresses\n\
     " STATUS "\n\
         print status\n\
     " SHUTDOWN "\n\
@@ -48,6 +51,8 @@ int main(int argc, char* argv[]) {
     }
     if (IS(1, STATUS)){
         print_status();
+    } else if (IS(1, NET)) {
+        net_iuctl();
     } else if (IS(1, SHUTDOWN)) {
         shutdown_iuctl();
     } else {

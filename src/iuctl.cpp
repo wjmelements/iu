@@ -83,8 +83,24 @@ void status_iuctl() {
     init_iuctl_msg(&msg);
     msg.mtext.ctype = STATUSREQ;
     send_iuctl(&msg, sizeof(msg));
-    while(recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
+    while (recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
     printf("STATUS: GOOD\n");
+}
+/* In response to NETREQ, a server sends two messages; one with length
+ * and the other with a null-terminated string.
+ */
+void net_iuctl() {
+    iuctl_msg_t msg;
+    init_iuctl_msg(&msg);
+    msg.mtext.ctype = NETREQ;
+    send_iuctl(&msg, sizeof(msg));
+    // FIXME something more intelligent than != 0
+    while (recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
+    size_t len = msg.mtext.len;
+    iuctl_msg_t* string = (iuctl_msg_t*) Malloc(len);
+    while (recv_iuctl(self_pid, string, len) != 0);
+    fputs(&string->stext, stdout);
+    free(string);
 }
 void shutdown_iuctl() {
     iuctl_msg_t msg;

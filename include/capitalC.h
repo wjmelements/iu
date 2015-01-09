@@ -49,7 +49,7 @@ void Pthread_mutex_lock(pthread_mutex_t* mutex);
 void Pthread_mutex_unlock(pthread_mutex_t* mutex);
 void Read(int fd, void* buf, size_t count);
 void Send(int sockfd, const void* buf, size_t len, int flags);
-void Snprintf(char* str, size_t size, const char* format, ...);
+int Snprintf(char* str, size_t size, const char* format, ...);
 int Socket(int domain, int type, int protocol);
 void Unlink(const char* path);
 void Wait(int* status);
@@ -129,13 +129,14 @@ static inline pid_t Wait(int* status) {
     }
     return ret;
 }
-static inline void Snprintf(char* str, size_t size, const char* format, ...) {
+static inline int Snprintf(char* str, size_t size, const char* format, ...) {
     va_list arg;
     va_start(arg, format);
     int ret = vsnprintf(str, size, format, arg);
     if (ret < 0) {
         DIE();
     }
+    return ret;
 }
 static inline void Kill(pid_t pid, int sig) {
     int ret = kill(pid, sig);
