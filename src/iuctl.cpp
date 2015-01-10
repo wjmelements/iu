@@ -60,7 +60,6 @@ int join_iuctl() {
     server_pid = atoi(server_pid_str);
     assert(server_pid > 0);
     if(kill(server_pid, 0) != 0) {
-        perror("kill");
         return errno;
     }
     self_pid = getpid();
@@ -85,6 +84,16 @@ void status_iuctl() {
     send_iuctl(&msg, sizeof(msg));
     while (recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
     printf("STATUS: GOOD\n");
+}
+void addr_iuctl(nid_t nid, addr_t* addr) {
+    iuctl_msg_t msg;
+    init_iuctl_msg(&msg);
+    msg.mtext.ctype = LEARN_ADDR;
+    msg.mtext.nid = nid;
+    send_iuctl(&msg, sizeof(msg));
+    msg.mtype = self_pid;
+    msg.addr = *addr;
+    send_iuctl(&msg, sizeof(msg));
 }
 /* In response to NETREQ, a server sends two messages; one with length
  * and the other with a null-terminated string.

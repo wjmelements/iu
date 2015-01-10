@@ -1,10 +1,11 @@
 #ifndef IUCTL_H
 #define IUCTL_H
 #include "capitalC.h"
+#include "types.h"
 #include <sys/types.h>
 
 enum ctl_t {
-    LEARN_PORT,
+    LEARN_ADDR,
     STATUSREQ,
     STATUS,
     NETREQ,
@@ -20,9 +21,11 @@ typedef struct iuctl_msg {
             union {
                 int status;
                 size_t len;
+                nid_t nid;
             };
         } mtext;
         char stext;
+        addr_t addr;
     };
 } iuctl_msg_t;
 
@@ -35,6 +38,7 @@ void init_iuctl_msg(iuctl_msg_t* msg);
 void status_iuctl();
 void shutdown_iuctl();
 void net_iuctl();
+void addr_iuctl(nid_t nid, addr_t* addr);
 
 /* Size should be the size of the entire message
  * struct, including the leading long */

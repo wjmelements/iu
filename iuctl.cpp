@@ -1,5 +1,6 @@
 #include "iuctl.h"
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +11,7 @@
 #include <sys/msg.h>
 
 #define HELP "help"
+#define ADDR "addr"
 #define NET "net"
 #define STATUS "status"
 #define SHUTDOWN "shutdown"
@@ -19,15 +21,27 @@ const char* help = "\
 iuctl [command] [params...]\n\
     " HELP "\n\
         print this message\n\
+    " ADDR " nid addr\n\
+        tell server about the address of a node\n\
     " NET "\n\
         print network addresses\n\
     " STATUS "\n\
         print status\n\
     " SHUTDOWN "\n\
-        shutdown iu server\
+        shutdown iu server\n\
+";
+const char* addr_help = "\
+iuctl addr nid addr\n\
+    nid\n\
+        node id\n\
+    addr\n\
+        IPv6 address of node\n\
 ";
 void print_help(void) {
-    puts(help);
+    fputs(help, stderr);
+}
+void print_addr_help(void) {
+    fputs(addr_help, stderr);
 }
 void print_status() {
     status_iuctl();
@@ -51,6 +65,15 @@ int main(int argc, char* argv[]) {
     }
     if (IS(1, STATUS)){
         print_status();
+    } else if (IS(1, ADDR)) {
+        if (argc < 4) {
+            print_addr_help();
+        }
+        addr_t addr;
+        if (inet_pton(AF_INET6, argv[3], &addr.siaddr6) == 0) {
+            perror(argv[3]);
+        }
+        addr_iuctl(atol(argv[2]), &addr);
     } else if (IS(1, NET)) {
         net_iuctl();
     } else if (IS(1, SHUTDOWN)) {

@@ -37,6 +37,11 @@ void iuctl_server_status(pid_t iuctl_pid) {
     msg.mtype = iuctl_pid;
     send_iuctl(&msg, sizeof(msg));
 }
+void iuctl_server_addr(pid_t iuctl_pid, nid_t nid) {
+    iuctl_msg_t msg;
+    while (recv_iuctl(iuctl_pid, &msg, sizeof(msg)) != 0);
+    setNodeAddr(nid, &msg.addr);
+}
 void iuctl_server_shutdown(pid_t iuctl_pid) {
     destroy_iuctl();
     exit(0);
@@ -46,6 +51,9 @@ void handle_iuctls() {
     if(recv_iuctl(self_pid, &msg, sizeof(msg)) == 0) {
         pid_t iuctl_pid = msg.mtext.pid;
         switch(msg.mtext.ctype) {
+            case LEARN_ADDR:
+                iuctl_server_addr(msg.mtext.pid, msg.mtext.nid);
+                break;
             case NETREQ:
                 iuctl_server_net(iuctl_pid);
                 break;
