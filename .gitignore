@@ -3,4 +3,4 @@ bin/
 *.swo
 *.swp
 .make/
-*.iuctl_q
+.pass/

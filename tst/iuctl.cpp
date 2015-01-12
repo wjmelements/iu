@@ -108,6 +108,7 @@ int main() {
     }
     free(args);
     // Wait for server to start (what a great solution!)
+    // FIXME no sleep here
     sleep(1);
     test_status();
     assert(server_pid > 0);

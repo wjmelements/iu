@@ -42,8 +42,9 @@ void iuctl_server_addr(pid_t iuctl_pid, nid_t nid) {
     while (recv_iuctl(iuctl_pid, &msg, sizeof(msg)) != 0);
     setNodeAddr(nid, &msg.addr);
 }
-void iuctl_server_shutdown(pid_t iuctl_pid) {
+void iuctl_server_shutdown() {
     destroy_iuctl();
+    shutdown_server();
     exit(0);
 }
 void handle_iuctls() {
@@ -61,11 +62,31 @@ void handle_iuctls() {
                 iuctl_server_status(iuctl_pid);
                 break;
             case SHUTDOWNREQ:
-                iuctl_server_shutdown(iuctl_pid);
+                iuctl_server_shutdown();
             default:
                 fprintf(stderr, "Received invalid message\n");
                 break;
         }
     }
     return;
+}
+static void iuctl_handler(int signal) {
+    switch (signal) {
+    case SIGINT:
+    case SIGTERM:
+        iuctl_server_shutdown();
+    }
+}
+static void iuctl_signals() {
+    struct sigaction act;
+    act.sa_handler = iuctl_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    act.sa_restorer = 0;
+    Sigaction(SIGTERM, &act, NULL);
+    Sigaction(SIGINT, &act, NULL);
+}
+void init_iuctl_server() {
+    init_iuctl();
+    iuctl_signals();
 }

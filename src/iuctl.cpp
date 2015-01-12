@@ -21,6 +21,11 @@ static int msg_q;
 pid_t self_pid;
 pid_t server_pid;
 
+void destroy_iuctl() {
+    msgctl(msg_q, IPC_RMID, NULL);
+    Unlink(QUEUE_PATH);
+}
+
 static void init_iuctl(bool creat) {
     if(creat) {
         int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR);
@@ -67,9 +72,11 @@ int join_iuctl() {
     init_iuctl(false);
     return 0;
 }
-void destroy_iuctl() {
-    msgctl(msg_q, IPC_RMID, NULL);
-    unlink(QUEUE_PATH);
+void shutdown_iuctl() {
+    iuctl_msg_t msg;
+    init_iuctl_msg(&msg);
+    msg.mtext.ctype = SHUTDOWNREQ;
+    send_iuctl(&msg, sizeof(msg));
 }
 void init_iuctl_msg(iuctl_msg_t* msg) {
     bzero(msg, sizeof(*msg));
@@ -110,12 +117,6 @@ void net_iuctl() {
     while (recv_iuctl(self_pid, string, len) != 0);
     fputs(&string->stext, stdout);
     free(string);
-}
-void shutdown_iuctl() {
-    iuctl_msg_t msg;
-    init_iuctl_msg(&msg);
-    msg.mtext.ctype = SHUTDOWNREQ;
-    send_iuctl(&msg, sizeof(msg));
 }
 void send_iuctl(void* msg, size_t size) {
     assert(size - sizeof(long) > 0);

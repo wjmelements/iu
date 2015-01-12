@@ -49,6 +49,7 @@ void Pthread_mutex_lock(pthread_mutex_t* mutex);
 void Pthread_mutex_unlock(pthread_mutex_t* mutex);
 void Read(int fd, void* buf, size_t count);
 void Send(int sockfd, const void* buf, size_t len, int flags);
+void Sigaction(int signum, const struct sigaction* newact, struct sigaction* oldact);
 int Snprintf(char* str, size_t size, const char* format, ...);
 int Socket(int domain, int type, int protocol);
 void Unlink(const char* path);
@@ -137,6 +138,12 @@ static inline int Snprintf(char* str, size_t size, const char* format, ...) {
         DIE();
     }
     return ret;
+}
+static inline void Sigaction(int signum, const struct sigaction* newact, struct sigaction* oldact) {
+    int ret = sigaction(signum, newact, oldact);
+    if (ret == -1) {
+        DIE();
+    }
 }
 static inline void Kill(pid_t pid, int sig) {
     int ret = kill(pid, sig);

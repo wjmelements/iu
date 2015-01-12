@@ -5,10 +5,12 @@ CCSTD=-std=gnu11
 CXXSTD=-std=gnu++11
 CFLAGS=-O3 -fdiagnostics-color=auto -pthread -g $(CCSTD)
 CXXFLAGS=$(filter-out $(CCSTD), $(CFLAGS)) $(CXXSTD) -fno-exceptions -Wno-write-strings -Wno-pointer-arith
-MKDIRS=lib bin tst/bin .pass .pass/tst/bin .make .make/bin .make/tst/bin .make/lib
+MKDIRS=lib bin tst/bin .pass .pass/tst/bin .pass/tst/scripts .make .make/bin .make/tst/bin .make/lib
 INCLUDE=$(addprefix -I,include)
 EXECS=$(addprefix bin/,iuclient iuserver iuctl)
-TESTS=$(addprefix tst/bin/,capitalC concat stream mpsc msg datacenters net todo file node messenger relay iuctl)
+BINTESTS=$(addprefix tst/bin/,capitalC concat stream mpsc msg datacenters net todo file node messenger relay iuctl)
+SCRIPTTESTS=$(addprefix tst/scripts/, relay)
+TESTS=$(BINTESTS) $(SCRIPTTESTS)
 SRC=$(wildcard src/*.cpp)
 LIBS=$(patsubst src/%.cpp, lib/%.o, $(SRC))
 
@@ -47,10 +49,16 @@ distcheck dist-check:
 	@rm -rf .pass
 	@make --no-print-directory check
 .pass/tst/bin/%: tst/bin/% | .pass/tst/bin
-	@printf "$<: "
+	@printf "\033[0;33mRUNNING\033[0m| $< "
 	@$<\
-		&& echo -e "\033[0;32mpass\033[0m" && touch $@\
-		|| echo -e "\033[0;31mfail\033[0m"
+		&& echo -e "\r\033[0;32mPASS\033[0m   " && touch $@\
+		|| echo -e "\r\033[0;31mFAIL\033[0m   "
+.pass/tst/scripts/%: tst/scripts/% | .pass/tst/scripts
+	@printf "\033[0;33mRUNNING\033[0m| $< "
+	@$<\
+		&& echo -e "\r\033[0;32mPASS\033[0m   " && touch $@\
+		|| echo -e "\r\033[0;31mFAIL\033[0m   "
+.pass/tst/scripts/%: tst/scripts/%.sh | .pass/tst/scripts
 $(MKDIRS):
 	@mkdir -p $@
 $(EXECS): | bin
