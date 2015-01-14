@@ -19,6 +19,7 @@ LIBS=$(patsubst src/%.cpp, lib/%.o, $(SRC))
 .SECONDARY:
 default: all
 all: $(EXECS) $(TESTS)
+$(addprefix .pass/,$(SCRIPTTESTS)): $(EXECS)
 clean:
 	rm -rf $(MKDIRS)
 again: clean all
