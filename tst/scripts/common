@@ -1,0 +1,30 @@
+#!/bin/bash
+SRV=bin/iuserver
+CLT=bin/iuclient
+CTL=bin/iuctl
+RG=2
+function setRegion {
+    RG=$1
+}
+ADDRS=()
+function spawnServer {
+    mkdir $1
+    cd $1
+    (../$SRV $1 $RG &)
+    ADDRS[$1]=$(../$CTL net | cut -c 14-)
+    cd ..
+}
+function tellServer {
+    cd $1
+    (../$CTL addr $2 ${ADDRS[$2]} &)
+    cd ..
+}
+function linkServers {
+    tellServer $1 $2
+    tellServer $2 $1
+}
+function iushutdown {
+    pkill iu
+    rm -r ${!ADDRS[@]}
+}
+
