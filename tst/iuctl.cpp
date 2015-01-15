@@ -31,7 +31,7 @@ output_t* run(char* path, char** args, int nargs) {
         Close(pfd[0]);
         char** argv;
         int argc = nargs + 1;
-        argv = (char**) Malloc(argc + 1);
+        argv = (char**) Malloc(sizeof(char*) * (argc + 1));
         for(int i = 0; i < argc; i++) {
             argv[i] = (char*) Malloc(ARG_LEN);
         }
@@ -57,7 +57,7 @@ void run_server(char** args, int nargs) {
     if(pid == 0) {
         char** argv;
         int argc = nargs + 1;
-        argv = (char**) Malloc(argc + 1);
+        argv = (char**) Malloc(sizeof(char*) * (argc + 1));
         for(int i = 0; i < argc; i++) {
             argv[i] = (char*) Malloc(ARG_LEN);
         }
