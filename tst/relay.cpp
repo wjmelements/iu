@@ -31,6 +31,7 @@ int main() {
         success = send_msg(&hmsg, NID1);
         assert(success);
 
+        messenger_destroy();
         shutdown_server();
         exit(EXIT_SUCCESS);
     }
@@ -49,6 +50,7 @@ int main() {
         messenger_text(TEXT, NID2);
         assert(get_conversation(NID2).size() == 1);
         
+        messenger_destroy();
         shutdown_server();
         exit(EXIT_SUCCESS);
     }
@@ -72,5 +74,7 @@ int main() {
     assert(Wait(&status) == pid2);
     assert(WIFEXITED(status));
     assert(WEXITSTATUS(status) == EXIT_SUCCESS);
+
+    shutdown_server();
     return 0;
 }

@@ -22,6 +22,8 @@ static void add_sent(const item_msg* imsg, item_t& item) {
     messages[imsg->receiver].push_back(item);
 }
 static void add_received(nid_t sender, item_t& item) {
+    // FIXME can we detect dupe here instead?
+    // FIXME free stuff on dupe
     received[sender][item.index] = item;
     list<item_t>& items = messages[sender];
     for (auto it = items.begin(); it != items.end(); it++) {
@@ -116,7 +118,7 @@ void handle_item_msg(const item_msg* imsg) {
         msg* smsg = next_msg_same();
         const string_msg* str = (const string_msg*) smsg;
         size_t size = str->text_size();
-        item.text = (char*) malloc(size + 1);
+        item.text = (char*) Malloc(size + 1);
         memcpy(item.text, &str->text, size);
         item.text[size] = '\0';
         free(smsg);

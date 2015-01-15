@@ -53,6 +53,7 @@ void init_iuctl() {
     char self_pid_str[24];
     Snprintf(self_pid_str, sizeof(self_pid_str), "%lu", self_pid);
     write(fd, self_pid_str, strlen(self_pid_str));
+    Close(fd);
     init_iuctl(true);
 }
 int join_iuctl() {
@@ -62,6 +63,7 @@ int join_iuctl() {
     }
     char server_pid_str[32];
     read(fd, server_pid_str, sizeof(server_pid_str));
+    Close(fd);
     server_pid = atoi(server_pid_str);
     assert(server_pid > 0);
     if(kill(server_pid, 0) != 0) {
