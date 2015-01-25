@@ -11,7 +11,11 @@ function spawnServer {
     mkdir $1
     cd $1
     (../$SRV $1 $RG &)
-    ADDRS[$1]=$(../$CTL net | cut -c 14-)
+    until [ -f .iuctl_q ]; do
+        true
+    done
+    ADDR=$(../$CTL net | cut -c 14-)
+    ADDRS[$1]=$ADDR
     cd ..
 }
 function tellServer {
