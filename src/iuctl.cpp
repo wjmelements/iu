@@ -85,13 +85,21 @@ void init_iuctl_msg(iuctl_msg_t* msg) {
     msg->mtext.pid = self_pid;
     msg->mtype = server_pid;
 }
-/* TODO */
+
 void status_iuctl() {
     iuctl_msg_t msg;
     init_iuctl_msg(&msg);
     msg.mtext.ctype = STATUSREQ;
     send_iuctl(&msg, sizeof(msg));
-    while (recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
+    while (recv_iuctl(self_pid, &msg, sizeof(msg)) == ENOMSG);
+    switch(msg.mtext.status) {
+        case IDLE:
+            printf("STATUS: IDLE\n");
+        case BUSY:
+            printf("STATUS: BUSY\n");
+        case ERROR:
+            printf("STATUS: ERROR\n");
+    }
     printf("STATUS: GOOD\n");
 }
 void addr_iuctl(nid_t nid, addr_t* addr) {
@@ -112,8 +120,7 @@ void net_iuctl() {
     init_iuctl_msg(&msg);
     msg.mtext.ctype = NETREQ;
     send_iuctl(&msg, sizeof(msg));
-    // FIXME something more intelligent than != 0
-    while (recv_iuctl(self_pid, &msg, sizeof(msg)) != 0);
+    while (recv_iuctl(self_pid, &msg, sizeof(msg)) == ENOMSG);
     size_t len = msg.mtext.len;
     iuctl_msg_t* string = (iuctl_msg_t*) Malloc(len);
     while (recv_iuctl(self_pid, string, len) != 0);
@@ -130,7 +137,14 @@ void send_iuctl(void* msg, size_t size) {
 int recv_iuctl(int mtype, void* buf, size_t size) {
     int res = msgrcv(msg_q, buf, size - sizeof(long), mtype, IPC_NOWAIT);
     if(res == -1) {
-        return errno;
+        /* Two errors are recoverable, generally ENOMSG */
+        /* TODO: behavior of msgrcv upon EINTR */
+        if(errno == EAGAIN || errno == ENOMSG) {
+            return ENOMSG;
+        } else {
+            /* TODO: terminate here? Most errors other than EINTR are fatal */
+            perror("recv_iuctl:msgrcv");
+        }
     }
     return 0;
 }

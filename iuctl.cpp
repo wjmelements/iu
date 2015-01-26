@@ -56,9 +56,6 @@ int main(int argc, char* argv[]) {
         print_help();
         exit(EXIT_SUCCESS);
     }
-    /* Check if server is running */
-    /* TODO */
-    //init_iuctl();
     if(join_iuctl() != 0) {
         fprintf(stderr, "Error, is server running?\n");
         return -1;

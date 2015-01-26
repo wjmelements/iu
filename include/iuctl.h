@@ -12,6 +12,12 @@ enum ctl_t {
     SHUTDOWNREQ,
 };
 
+enum iu_status_t {
+    IDLE,
+    BUSY,
+    ERROR
+};
+
 typedef struct iuctl_msg {
     long mtype;
     union {
@@ -19,7 +25,7 @@ typedef struct iuctl_msg {
             pid_t pid;
             ctl_t ctype;
             union {
-                int status;
+                iu_status_t status;
                 size_t len;
                 nid_t nid;
             };
