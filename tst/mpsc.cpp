@@ -98,7 +98,7 @@ int main() {
     basic_test();
     #define NTRIALS 3000
     for (size_t i = 0; i < NTRIALS; i++) {
-        printf("%04X / %04X\b\b\b\b\b\b\b\b\b\b\b", i, NTRIALS);
+        printf("%04zX / %04X\b\b\b\b\b\b\b\b\b\b\b", i, NTRIALS);
         if (i < NTRIALS / 2) {
             para_test();
         } else {

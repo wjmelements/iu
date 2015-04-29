@@ -28,7 +28,7 @@ void destroy_iuctl() {
 
 static void init_iuctl(bool creat) {
     if(creat) {
-        int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR);
+        int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR, 0700);
         Close(fd);
     }
     /* Cannot use directory */
@@ -52,7 +52,7 @@ void init_iuctl() {
     assert(self_pid > 0);
     char self_pid_str[24];
     Snprintf(self_pid_str, sizeof(self_pid_str), "%lu", self_pid);
-    write(fd, self_pid_str, strlen(self_pid_str));
+    Write(fd, self_pid_str, strlen(self_pid_str));
     Close(fd);
     init_iuctl(true);
 }
@@ -62,7 +62,7 @@ int join_iuctl() {
         return errno;
     }
     char server_pid_str[32];
-    read(fd, server_pid_str, sizeof(server_pid_str));
+    Read(fd, server_pid_str, sizeof(server_pid_str));
     Close(fd);
     server_pid = atoi(server_pid_str);
     assert(server_pid > 0);

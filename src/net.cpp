@@ -293,7 +293,7 @@ static int connect_to(nid_t nid) {
     int fd = Socket();
     auto address = addresses.find(nid);
     if (address == addresses.end()) {
-        fprintf(stderr, "No known address for node %u\n", nid);
+        fprintf(stderr, "No known address for node %lu\n", nid);
         return -1;
     }
     const addr_t addr = address->second;
