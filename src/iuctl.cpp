@@ -1,5 +1,6 @@
 #include "iuctl.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,7 +11,6 @@
 #include <sys/msg.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <assert.h>
 
 #define UMASK 0644
 /* Cannot be 0 */
@@ -28,7 +28,7 @@ void destroy_iuctl() {
 
 static void init_iuctl(bool creat) {
     if(creat) {
-        int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR, 0700);
+        int fd = Open(QUEUE_PATH, O_CREAT | O_RDWR, UMASK);
         Close(fd);
     }
     /* Cannot use directory */
@@ -51,18 +51,24 @@ void init_iuctl() {
     self_pid = getpid();
     assert(self_pid > 0);
     char self_pid_str[24];
-    Snprintf(self_pid_str, sizeof(self_pid_str), "%lu", self_pid);
-    Write(fd, self_pid_str, strlen(self_pid_str));
+    int bytes = Snprintf(self_pid_str, sizeof(self_pid_str), "%lu", self_pid);
+    Write(fd, self_pid_str, bytes);
     Close(fd);
     init_iuctl(true);
 }
+template<typename T> inline T min(T one, T two) {
+    return one < two ? one : two;
+}
 int join_iuctl() {
+    struct stat info;
+    Stat(QUEUE_PATH, &info);
     int fd = open(QUEUE_PATH, O_RDONLY);
+    
     if (fd == -1) {
         return errno;
     }
     char server_pid_str[32];
-    Read(fd, server_pid_str, sizeof(server_pid_str));
+    Read(fd, server_pid_str, min<size_t>(sizeof(server_pid_str),info.st_size));
     Close(fd);
     server_pid = atoi(server_pid_str);
     assert(server_pid > 0);

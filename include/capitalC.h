@@ -192,6 +192,12 @@ static inline void Fstat(int fd, struct stat* info) {
         DIE();
     }
 }
+static inline void Stat(const char*  path, struct stat* info) {
+    int success = stat(path, info);
+    if (success == -1) {
+        DIEWITH(path);
+    }
+}
 static inline void Linkat(int olddirfd, const char* oldpath, int newdirfd, const char* newpath, int flags) {
     int status = linkat(olddirfd, oldpath, newdirfd, newpath, flags);
     if (status) {
