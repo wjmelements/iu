@@ -100,13 +100,15 @@ void status_iuctl() {
     while (recv_iuctl(self_pid, &msg, sizeof(msg)) == ENOMSG);
     switch(msg.mtext.status) {
         case IDLE:
-            printf("STATUS: IDLE\n");
+            puts("STATUS: IDLE");
+            break;
         case BUSY:
-            printf("STATUS: BUSY\n");
+            puts("STATUS: BUSY");
+            break;
         case ERROR:
-            printf("STATUS: ERROR\n");
+            puts("STATUS: ERROR");
+            break;
     }
-    printf("STATUS: GOOD\n");
 }
 void addr_iuctl(nid_t nid, addr_t* addr) {
     iuctl_msg_t msg;
