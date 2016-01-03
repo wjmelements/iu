@@ -23,8 +23,7 @@ void iuctl_server_net(pid_t iuctl_pid) {
     msg.mtype = iuctl_pid;
     msg.mtext.len = len + sizeof(msg.mtype);
     send_iuctl(&msg, sizeof(msg));
-    iuctl_msg_t* smsg = (iuctl_msg_t*) Malloc(msg.mtext.len);
-    init_iuctl_msg(smsg);
+    iuctl_msg_t* smsg = (iuctl_msg_t*) Calloc(1, msg.mtext.len);
     smsg->mtype = iuctl_pid;
     strncpy(&smsg->stext, net_status, len);
     send_iuctl(smsg, msg.mtext.len);
