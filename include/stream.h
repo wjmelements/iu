@@ -45,7 +45,7 @@ template <typename T> class stream {
         void sweep();
 
     public:
-        // responsiblity of thread creator
+        // responsibility of thread creator
         stream(size_t max_listeners);
         ~stream();
         struct key<T>* listen();
