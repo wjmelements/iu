@@ -38,7 +38,7 @@ template <typename T> class concat {
         void sweep();
 
     public:
-        // responsiblity of thread creator
+        // responsibility of thread creator
         concat();
         ~concat();
         // listener activities
